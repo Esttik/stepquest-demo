@@ -255,6 +255,15 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
   drop-shadow(0 7px 6px rgba(0,0,0,.5))}
 .forgehint{font-size:11.5px;color:var(--muted);margin-bottom:4px}
 .forgehint b{color:var(--gold)}
+/* feed de eventos de la expedición */
+.expfeed{display:flex;flex-direction:column;gap:6px;margin-top:8px;max-height:190px;overflow-y:auto}
+.efline{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,.03);border:1px solid var(--line);animation:efin .35s ease}
+.efline .eico{font-size:19px;width:26px;text-align:center;flex:none}
+.efline .etx{flex:1;min-width:0}
+.efline .etx .en{font-size:12.5px;color:#e8eefc;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.efline .etx .es{font-size:10.5px;color:var(--muted)}
+.efline.r-rara{border-color:rgba(63,180,255,.5)} .efline.r-epica{border-color:rgba(139,92,246,.55)} .efline.r-leg{border-color:rgba(245,196,81,.6);background:rgba(245,196,81,.06)}
+@keyframes efin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -384,17 +393,11 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
 
         <div class="field"><div class="lab">Meta diaria de pasos</div>
           <div class="opts" id="stepgoals">
-            <div class="opt" data-g="6000">6.000</div>
-            <div class="opt" data-g="10000">10.000</div>
-            <div class="opt sel" data-g="15000">15.000</div>
+            <div class="opt" data-g="5000">5.000</div>
+            <div class="opt sel" data-g="8000">8.000</div>
+            <div class="opt" data-g="12000">12.000</div>
           </div>
-        </div>
-        <div class="field"><div class="lab">Entrenar por semana</div>
-          <div class="opts" id="traingoals">
-            <div class="opt" data-t="3">3 días</div>
-            <div class="opt" data-t="4">4 días</div>
-            <div class="opt sel" data-t="6">6 días</div>
-          </div>
+          <div class="mut" style="font-size:11px;margin-top:6px">Tus pasos hacen avanzar solo a tu Cazador: cada 100 pasos = 1 avance con recompensas. Cumple la meta para el cofre diario y la racha 🔥.</div>
         </div>
         <button class="btn" style="width:100%;margin-top:6px" onclick="finishOnboarding()">⚔ ACEPTAR EL LLAMADO</button>
       </div>
@@ -411,24 +414,25 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
         <div class="today">
           <div class="big" id="home-steps">0</div>
           <div class="lb">PASOS HOY</div>
-          <div class="conv"><span style="color:var(--cyan)">⚡ <b id="home-en">0</b> Energía</span><span style="color:var(--gold)">✦ <b id="home-gainxp">0</b> EXP</span><span style="color:var(--red)">🔥 <b id="home-streak">0</b></span></div>
+          <div class="conv"><span style="color:var(--gold)">✦ <b id="home-gainxp">0</b> XP</span><span style="color:#ff4d6d">🔥 <b id="home-streak">1</b> días</span></div>
         </div>
         <div class="card dq">
-          <div class="h">◈ Tu misión diaria</div>
-          <div class="r"><span>Andar <b id="dq-goal">15.000</b> pasos</span><span class="pd" id="dq-steps">0 / 15.000</span></div>
-          <div class="r"><span>Entrenar hoy</span><span class="pd" id="dq-train">0 / 1</span></div>
+          <div class="h">◈ Meta diaria</div>
+          <div class="r"><span>Andar <b id="dq-goal">8.000</b> pasos</span><span class="pd" id="dq-steps">0 / 8.000</span></div>
+          <div class="mut" style="font-size:11px;margin-top:3px">Cúmplela para tu <b style="color:var(--gold)">cofre diario</b> y mantener la racha 🔥.</div>
         </div>
-        <div class="card">
-          <div class="row"><span class="h" style="margin:0">⚡ Energía</span><span class="mono" style="font-size:20px;color:var(--cyan-b);font-weight:700"><span id="en-cur">0</span></span></div>
-          <div class="mut" style="font-size:11px;margin-top:3px">Se gana con tus pasos y se gasta explorando mazmorras. <b style="color:var(--cyan-b)">Sin límite</b>: cuanto más te muevas, más lejos llegas.</div>
+        <div class="card" style="border-color:rgba(139,92,246,.4)">
+          <div class="row"><span class="h" style="margin:0">🗺️ Expedición activa</span><span class="mono" style="font-size:11px;color:#a78bfa" id="home-expname">—</span></div>
+          <div class="mut" style="font-size:11.5px;margin:5px 0 6px">Tu Cazador avanza <b style="color:var(--cyan-b)">solo con tus pasos</b>. Cada <b style="color:#a78bfa">100 pasos = 1 avance</b>: enemigos, oro y cofres. Sigue avanzando aunque cierres la app.</div>
+          <div class="row"><span class="mono" style="font-size:10px;color:var(--muted)">🌙 Pasos guardados (offline)</span><span class="mono" style="font-size:13px;color:var(--cyan-b);font-weight:700"><span id="home-saved">0</span></span></div>
         </div>
-        <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ IR AL MAPA — ENTRAR AL PORTAL</button>
+        <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
       </div>
 
       <!-- MAPA -->
       <div class="screen" id="s-mapa">
-        <div class="row"><div class="sec-title">🗺️ Mapa del mundo</div><span class="mono" style="font-size:11px;color:var(--cyan-b)">⚡<span id="map-en">0</span></span></div>
-        <div class="mut">Toca una región desbloqueada para entrar. Necesitas nivel y energía.</div>
+        <div class="row"><div class="sec-title">🗺️ Mapa del mundo</div><span class="mono" style="font-size:11px;color:var(--cyan-b)">🌙<span id="map-en">0</span></span></div>
+        <div class="mut">Toca una región desbloqueada para enviar a tu Cazador. Avanza con tus pasos.</div>
         <div id="regions" style="display:flex;flex-direction:column;gap:14px;margin-top:6px"></div>
       </div>
 
@@ -438,7 +442,11 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
         <div class="card">
           <div class="row" style="margin-bottom:6px"><span class="mono" style="font-size:10px;color:var(--muted)">AVANCE HACIA EL JEFE</span><span class="mono" style="font-size:11px;color:var(--cyan-b)" id="dg-progress">0 / 5</span></div>
           <div class="journey"><div class="jfill" id="dg-jfill" style="width:0%"></div><div class="jwalker" id="dg-jwalker">🚶</div><div class="jboss">👑</div></div>
-          <div class="row" style="margin-top:8px"><span class="mono" style="font-size:10px;color:var(--cyan)">⚡ <span id="dg-en">0</span> energía</span><span class="mono" style="font-size:10px;color:var(--green)">❤ <span id="dg-hp2">100/100</span></span></div>
+          <div style="margin-top:10px">
+            <div class="row" style="margin-bottom:4px"><span class="mono" style="font-size:10px;color:var(--cyan)">👣 PRÓXIMO AVANCE</span><span class="mono" style="font-size:10px;color:var(--muted)"><span id="dg-stride">0</span> / 100 pasos</span></div>
+            <div style="height:9px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden"><i id="dg-stridebar" style="display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--cyan-b));transition:width .3s"></i></div>
+          </div>
+          <div class="row" style="margin-top:8px"><span class="mono" style="font-size:10px;color:var(--green)">❤ <span id="dg-hp2">100/100</span></span><span class="mono" style="font-size:10px;color:var(--cyan-b)">🌙 <span id="dg-saved">0</span> guardados</span></div>
         </div>
 
         <!-- CAMINAR -->
@@ -453,7 +461,8 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
             <div class="wshadow"></div>
             <canvas id="walk-canvas" width="64" height="64" class="cv-pixel game-sprite" style="position:absolute;left:50%;bottom:19%;transform:translateX(-50%);width:112px;height:112px;z-index:3"></canvas>
           </div>
-          <div class="log" id="walk-log">Caminas por la zona...</div>
+          <div class="log" id="walk-log" style="text-align:center">Tu Cazador explora la zona...</div>
+          <div id="exp-feed" class="expfeed"></div>
           <div id="walk-actions"></div>
         </div>
 
@@ -563,23 +572,24 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
   <button id="demoToggle" onclick="toggleDemo()">🎮 Demo</button>
   <div class="demopanel">
     <div class="dh">🎮 Controles de demo</div>
-    <div class="dsub">No forman parte del juego. Simulan tu actividad física real (que en la app vendría de Apple Salud / Health Connect).</div>
+    <div class="dsub">Simulan tus pasos reales (en la app vendrían de Apple Salud / Health Connect, sin reloj). Cada 100 pasos = 1 avance.</div>
     <div class="btns">
       <button onclick="simSteps(2000)">👟 +2.000 pasos</button>
       <button onclick="simSteps(5000)">🏃 +5.000 pasos</button>
-      <button onclick="doTrain()">💪 Simular entreno</button>
+      <button onclick="simAway(4000)">🌙 Volver tras caminar (app cerrada)</button>
       <button class="reset" onclick="location.reload()">🔄 Reiniciar</button>
     </div>
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v1 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v2 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
   cls:'Guerrero', emoji:'🗡️', name:'Kael',
   level:1, exp:0, expMax:100,
-  steps:0, stepGoal:15000, trainGoal:6, trainedToday:0,
+  steps:0, stepGoal:8000, trainGoal:6, trainedToday:0,
+  savedSteps:0, goalDone:false,
   energy:0, energyMax:120,
   gold:0, gems:20, streak:1,
   stats:{fuerza:10,agilidad:8,vitalidad:12,resistencia:9,suerte:5},
@@ -638,16 +648,16 @@ function renderHome(){
   $('c-gold').textContent=fmt(S.gold); $('c-gems').textContent=S.gems;
   $('home-lv').textContent=S.level; $('home-xp').textContent=fmt(S.exp)+' / '+fmt(S.expMax);
   $('home-steps').textContent=fmt(S.steps);
-  $('home-en').textContent=S.energy; $('home-streak').textContent=S.streak;
+  $('home-streak').textContent=S.streak;
   const pct=Math.min(100,S.exp/S.expMax*100);
   $('home-ring').style.background='conic-gradient(var(--cyan) 0% '+pct+'%, rgba(255,255,255,.07) '+pct+'% 100%)';
   $('dq-goal').textContent=fmt(S.stepGoal);
   $('dq-steps').textContent=fmt(Math.min(S.steps,S.stepGoal))+' / '+fmt(S.stepGoal);
-  const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓';
-  $('dq-train').textContent=S.trainedToday?'✓':'0 / 1'; $('dq-train').className=S.trainedToday?'ok':'pd';
-  $('en-cur').textContent=fmt(S.energy);
-  $('home-gainxp').textContent=0;
+  const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓ cumplida';
+  $('home-saved').textContent=fmt(S.savedSteps||0);
+  const fr=frontierRegion(); $('home-expname').textContent=fr?fr.name:'Todo despejado ✓';
 }
+function frontierRegion(){ return REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]); }
 function gainXP(amount){
   S.exp+=amount;
   while(S.exp>=S.expMax){ S.exp-=S.expMax; levelUp(); }
@@ -660,27 +670,28 @@ function refreshUI(){
   else if(S.screen==='personaje') renderHero();
   else if(S.screen==='tienda') renderShop();
 }
+const STEP_STRIDE=100;   // 100 pasos = 1 avance
+function checkDailyGoal(){
+  if(!S.goalDone && S.steps>=S.stepGoal){
+    S.goalDone=true; S.streak=(S.streak||0)+1;
+    const g=6+Math.floor(Math.random()*6); S.gems+=g; S.gold+=120;
+    showToast('🎁','LEG','¡Meta diaria cumplida!','+120 🪙 · +'+g+' 💎 · racha 🔥 '+S.streak);
+  }
+}
 function simSteps(n){
   S.steps+=n;
-  const en=Math.round(n/70), xp=Math.round(n/20);
-  S.energy+=en;
-  gainXP(xp);
-  refreshUI();
-  $('home-gainxp').textContent='+'+xp;
-  flushLevel();
+  const xp=Math.round(n/22); gainXP(xp); $('home-gainxp').textContent='+'+xp;
+  checkDailyGoal();
+  if(S.dg && S.screen==='dungeon'){ S.dg.strideBuf=(S.dg.strideBuf||0)+n; runExpedition(); }
+  else { S.savedSteps=(S.savedSteps||0)+n; }
+  refreshUI(); flushLevel();
 }
-function doTrain(){
-  if(S.trainedToday){ showToast('💪','SELLO','Ya has entrenado hoy','Vuelve mañana'); return; }
-  S.trainedToday=1;
-  gainXP(60);                         // un entrenamiento = MUCHA experiencia
-  S.gold+=50;
-  S.inventory.push(mkSello());
-  refreshUI();
-  showToast('🎖️','SELLO','Sello de Cazador','+60 EXP · +50 🪙');
-  flushLevel();
+function simAway(n){   // pasos con la app cerrada -> se guardan para la expedición
+  S.steps+=n; gainXP(Math.round(n/22)); checkDailyGoal();
+  S.savedSteps=(S.savedSteps||0)+n;
+  refreshUI(); flushLevel();
+  showToast('🌙','RARA','Caminaste '+fmt(n)+' pasos','Guardados para tu expedición');
 }
-function mkSello(){return{name:'Sello de Cazador',rar:'rara',ico:'🎖️',kind:'material'};}
-function flash(msg){ const l=$('dg-log'); }
 
 /* ---------- map ---------- */
 const REGIONS=[
@@ -690,7 +701,7 @@ const REGIONS=[
   {id:3,name:'Trono del Monarca',ico:'👑',rk:'S',minLv:16,rooms:7,color:'#ff4d6d',boss:'Monarca de Ceniza',bemo:'👑'}
 ];
 function renderMap(){
-  $('map-en').textContent=fmt(S.energy);
+  $('map-en').textContent=fmt(S.savedSteps||0);
   const el=$('regions'); el.innerHTML='';
   const frontier=REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]);
   REGIONS.forEach(r=>{
@@ -713,64 +724,90 @@ function renderMap(){
   });
 }
 
-/* ---------- mazmorra: caminar + combate (estilo Dark War) ---------- */
-const WALK_COST=15;
-function leaveDungeon(){ if(S.dg&&S.dg.timer)clearTimeout(S.dg.timer); S.dg=null; go('mapa'); }
+/* ---------- mazmorra: EXPEDICIÓN AUTOMÁTICA (avanza con los pasos) + jefe manual ---------- */
+const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Rata gigante','🐀'],['Golem menor','🪨']];
+function leaveDungeon(){ const d=S.dg; if(d&&d.timer)clearTimeout(d.timer); if(d){ S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); } S.dg=null; go('mapa'); }
 function enterDungeon(r){
-  if(S.energy<WALK_COST){ alert('Necesitas al menos '+WALK_COST+' de energía para adentrarte. ¡Muévete un poco! (controles de demo)'); return; }
   S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
-  S.dg={r,idx:0,total:r.rooms,phase:'idle',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null};
+  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false};
   $('dg-title').textContent=r.name;
   $('walk-scene').style.setProperty('--zone', r.color);
   $('dg-arena').style.setProperty('--zone', r.color);
-  go('dungeon'); walkToNext();
+  $('exp-feed').innerHTML='';
+  go('dungeon'); showWalk(); updateExpUI();
+  const saved=S.savedSteps||0;
+  if(saved>0){
+    S.savedSteps=0; S.dg.strideBuf+=saved;
+    $('walk-log').innerHTML='🌙 Aplicando <b>'+fmt(saved)+'</b> pasos guardados a la expedición…';
+    setTimeout(()=>runExpedition(),550);
+  } else {
+    $('walk-log').innerHTML='Tu Cazador entra en <b>'+r.name+'</b>. ¡Camina para avanzar!';
+  }
 }
 function showWalk(){ $('walk-panel').style.display='block'; $('combat-panel').style.display='none'; }
 function showCombat(){ $('walk-panel').style.display='none'; $('combat-panel').style.display='block'; }
-function updateJourney(){
+function updateExpUI(){
   const d=S.dg; if(!d)return;
-  $('dg-progress').textContent=d.idx+' / '+d.total;
-  const pct=d.idx/d.total*100;
+  $('dg-progress').textContent=Math.min(d.idx,d.total)+' / '+d.total;
+  const pct=Math.min(100,d.idx/d.total*100);
   $('dg-jfill').style.width=pct+'%';
   $('dg-jwalker').style.left='calc('+Math.min(90,pct)+'% - 4px)';
-  $('dg-en').textContent=S.energy;
+  const within=Math.round((d.strideBuf||0)%STEP_STRIDE);
+  $('dg-stride').textContent=within;
+  $('dg-stridebar').style.width=within+'%';
   $('dg-hp2').textContent=Math.max(0,Math.round(S.hp))+'/'+S.hpMax;
+  $('dg-saved').textContent=fmt(S.savedSteps||0);
 }
-function updateDungeonUI(){ if(!S.dg)return; updateJourney(); if(S.dg.phase==='combat')renderCombat(); }
-function walkToNext(){
-  const d=S.dg; if(!d)return;
-  showWalk(); updateJourney();
-  if(S.energy<WALK_COST){
-    d.phase='stuck';
-    $('walk-scene').classList.remove('walking');
-    $('walk-log').innerHTML='⚡ <b style="color:var(--red)">Sin energía.</b> No puedes seguir avanzando.<br>¡Muévete en la vida real para recargar!';
-    $('walk-actions').innerHTML='<button class="btn ghost" style="width:100%;margin-top:8px" onclick="walkToNext()">▶ Seguir caminando</button>';
-    return;
-  }
-  d.phase='walking'; S.energy-=WALK_COST; $('walk-actions').innerHTML='';
-  $('walk-scene').classList.add('walking');
-  const bossNext=(d.idx+1>=d.total);
-  $('walk-log').innerHTML=bossNext?'El suelo tiembla... algo enorme se acerca.':('Caminas por '+d.r.name+'...');
-  updateJourney();
-  clearTimeout(d.timer);
-  d.timer=setTimeout(()=>{ $('walk-scene').classList.remove('walking'); startEncounter(); },1600);
+function updateDungeonUI(){ if(!S.dg)return; updateExpUI(); if(S.dg.phase==='combat')renderCombat(); }
+function refreshCurr(){ $('c-gold').textContent=fmt(S.gold); $('c-gems').textContent=S.gems; }
+function pushFeed(ico,rar,name,sub){
+  const f=$('exp-feed'); if(!f)return;
+  const el=document.createElement('div'); el.className='efline'+(rar?' r-'+rar:'');
+  el.innerHTML='<div class="eico">'+ico+'</div><div class="etx"><div class="en">'+name+'</div><div class="es">'+sub+'</div></div>';
+  f.insertBefore(el,f.firstChild);
+  while(f.children.length>8) f.removeChild(f.lastChild);
+  $('walk-log').innerHTML=name;
 }
-function startEncounter(){
-  const d=S.dg; d.idx++;
-  const isBoss=d.idx>=d.total, base=d.r.minLv;
-  if(isBoss){
-    d.enemy={name:d.r.boss,emo:d.r.bemo,hp:base*38+120,hpMax:base*38+120,atk:base*3+7,boss:true};
-    $('dg-arena').classList.add('boss');
-  }else{
-    const mobs=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Golem menor','🪨']];
-    const m=mobs[Math.floor(Math.random()*mobs.length)];
-    d.enemy={name:m[0],emo:m[1],hp:base*13+16,hpMax:base*13+16,atk:base*2+3,boss:false};
-    $('dg-arena').classList.remove('boss');
+function runExpedition(){
+  const d=S.dg; if(!d||d.running||d.phase!=='auto')return;
+  d.running=true; $('walk-scene').classList.add('walking');
+  (function stepOne(){
+    const d=S.dg; if(!d){return;}
+    if(d.phase!=='auto'){ d.running=false; return; }
+    if((d.strideBuf||0)<STEP_STRIDE){ d.running=false; $('walk-scene').classList.remove('walking'); updateExpUI(); return; }
+    if(d.idx>=d.total){ d.running=false; $('walk-scene').classList.remove('walking'); startBoss(); return; }
+    d.strideBuf-=STEP_STRIDE; d.idx++;
+    roomEvent(); updateExpUI(); refreshCurr();
+    d.timer=setTimeout(stepOne,700);
+  })();
+}
+function roomEvent(){
+  const d=S.dg, base=d.r.minLv, roll=Math.random();
+  S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.05));   // recupera algo entre salas
+  if(roll<0.60){
+    const mob=EXP_MOBS[Math.floor(Math.random()*EXP_MOBS.length)];
+    const dmg=Math.max(0,Math.round((base*2+3)*(0.5+Math.random()*0.5)-totalStat('resistencia')*0.7));
+    S.hp=Math.max(1,S.hp-dmg);
+    const xp=base*7+8, gold=8+Math.floor(Math.random()*12)+base;
+    S.gold+=gold; gainXP(xp);
+    pushFeed('⚔️',null,'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
+    if(Math.random()<0.13+totalStat('suerte')*0.004){ const it=makeItem(Math.random()<0.22); pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); }
+  } else if(roll<0.82){
+    const gold=14+Math.floor(Math.random()*20)+base*2; S.gold+=gold;
+    pushFeed('💰',null,'Tesoro encontrado','+'+gold+' 🪙');
+  } else {
+    if(Math.random()<0.65){ const it=makeItem(Math.random()<0.28); pushFeed(it.ico,it.rar,'Cofre: '+it.name,statText(it)); }
+    else { const g=1+Math.floor(Math.random()*3); S.gems+=g; pushFeed('🎁','epica','Cofre de gemas','+'+g+' 💎'); }
   }
+}
+function startBoss(){
+  const d=S.dg, base=d.r.minLv;
+  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:base*34+110,hpMax:base*34+110,atk:base*3+6,boss:true};
+  $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
   $('en-sprite').textContent=d.enemy.emo;
-  $('dg-log').innerHTML=isBoss?('⚠️ <b>'+d.enemy.name+'</b> te cierra el paso.'):('Un <b>'+d.enemy.name+'</b> aparece en el camino.');
-  showCombat(); renderCombat(); updateJourney();
+  $('dg-log').innerHTML='⚠️ <b>'+d.enemy.name+'</b> te cierra el paso. ¡Derrótalo tú mismo!';
+  showCombat(); renderCombat(); updateExpUI();
 }
 const SKILLS=[
   {name:'Tajo Sombrío',ico:'🌑',mult:2.4,cd:2,tag:'daño alto'},
@@ -859,8 +896,9 @@ function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||(d.items[i]||0)<=
     if(e.hp<=0)setTimeout(enemyDown,450); else setTimeout(enemyStrike,560); }
 }
 function cmdFlee(){ if(!S.dg||S.dg.phase!=='combat')return; S.dg.menu='main';
-  const chance=40+totalStat('agilidad');
-  if(Math.random()*100<chance){ S.dg.phase='fleeing'; $('dg-log').innerHTML='🏃 Escapas del combate.'; setTimeout(()=>{ showWalk(); walkToNext(); },650); }
+  const chance=45+totalStat('agilidad');
+  if(Math.random()*100<chance){ S.dg.phase='auto'; $('dg-arena').classList.remove('boss'); $('dg-log').innerHTML='🏃 Te repliegas del jefe.';
+    setTimeout(()=>{ showWalk(); $('walk-log').innerHTML='Te repliegas. Camina para volver a enfrentarte al jefe.'; updateExpUI(); },650); }
   else{ $('dg-log').innerHTML='🏃 ¡No logras huir!'; setTimeout(enemyStrike,560); }
 }
 function enemyStrike(){
@@ -872,10 +910,9 @@ function enemyStrike(){
 function playerDown(){
   S.dg.phase='down';
   $('dg-log').innerHTML='💀 Has caído... El Sistema te retira con vida.';
-  setTimeout(()=>{ S.hp=S.hpMax; S.dg.idx=Math.max(0,S.dg.idx-1); showWalk();
-    $('walk-log').innerHTML='Te recuperas. Reúne fuerzas y sigue.';
-    $('walk-actions').innerHTML='<button class="btn ghost" style="width:100%;margin-top:8px" onclick="walkToNext()">▶ Seguir caminando</button>';
-    S.dg.phase='stuck'; updateJourney();
+  setTimeout(()=>{ S.hp=S.hpMax; $('dg-arena').classList.remove('boss'); S.dg.phase='auto'; showWalk();
+    $('walk-log').innerHTML='Te recuperas. Mejora tu equipo o camina más y vuelve a por el jefe.';
+    $('walk-actions').innerHTML=''; updateExpUI();
   },1100);
 }
 const LOOT=[
@@ -935,8 +972,8 @@ function rewardContinue(){
   const wasBoss=$('reward-ov').dataset.boss==='1';
   renderHome();
   flushLevel(()=>{
-    if(wasBoss){ alert('¡Región completada! Vuelves al mapa con tus recompensas.'); go('mapa'); }
-    else if(S.dg){ S.dg.phase='walking'; showWalk(); walkToNext(); }
+    if(wasBoss){ S.dg=null; showToast('👑','LEG','¡Región completada!','Vuelves al mapa con el botín'); go('mapa'); }
+    else if(S.dg){ S.dg.phase='auto'; showWalk(); }
   });
 }
 function statText(it){
@@ -1163,7 +1200,7 @@ function sellItem(it,price){ S.inventory=S.inventory.filter(x=>x!==it); S.gold+=
 function forgeCost(it){ return 30*((it.plus||0)+1) + ({comun:0,rara:15,epica:40,leg:90}[it.rar]||0); }
 function upgradeItem(it){
   const cost=forgeCost(it);
-  if(S.gold<cost){ showToast('🪙','ORO','Te falta oro','Necesitas '+cost+' 🪙 · consíguelo entrenando y en combate'); return; }
+  if(S.gold<cost){ showToast('🪙','ORO','Te falta oro','Necesitas '+cost+' 🪙 · consíguelo caminando y en combate'); return; }
   S.gold-=cost; it.plus=(it.plus||0)+1;
   ['fuerza','agilidad','resistencia','vitalidad','suerte'].forEach(k=>{ if(it[k]) it[k]+=1; });
   S.hpMax=100+totalStat('vitalidad')*8;
@@ -1172,7 +1209,7 @@ function upgradeItem(it){
 }
 function renderForge(el){
   el.className=''; el.style.display='flex'; el.style.flexDirection='column'; el.style.gap='8px';
-  el.innerHTML='<div class="forgehint">Gasta <b>🪙 oro</b> (lo ganas entrenando y en combate) para mejorar tu equipo. Cada mejora sube +1 a sus estadísticas.</div>';
+  el.innerHTML='<div class="forgehint">Gasta <b>🪙 oro</b> (lo ganas caminando y en combate) para mejorar tu equipo. Cada mejora sube +1 a sus estadísticas.</div>';
   const eq=SLOTS.map(sl=>S.equipped[sl.id]).filter(it=>it && statText(it));
   if(!eq.length){ el.innerHTML+='<div class="mut" style="text-align:center;padding:14px">Equípate objetos en 🎒 Mochila para poder mejorarlos.</div>'; return; }
   eq.forEach(it=>{
