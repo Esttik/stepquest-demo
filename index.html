@@ -264,6 +264,28 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .efline .etx .es{font-size:10.5px;color:var(--muted)}
 .efline.r-rara{border-color:rgba(63,180,255,.5)} .efline.r-epica{border-color:rgba(139,92,246,.55)} .efline.r-leg{border-color:rgba(245,196,81,.6);background:rgba(245,196,81,.06)}
 @keyframes efin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* Furia del Cazador */
+.ragewrap{margin-top:10px}
+.ragetop{display:flex;justify-content:space-between;font-family:'Orbitron';font-size:10px;color:#ff9d4d;margin-bottom:4px;letter-spacing:.5px}
+.ragebar{height:10px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(255,120,40,.25)}
+.ragebar i{display:block;height:100%;width:0%;background:linear-gradient(90deg,#ff5e3a,#ffb648);transition:width .3s;box-shadow:0 0 10px rgba(255,120,40,.6)}
+.ragebtn{width:100%;margin-top:8px;padding:11px;border:none;border-radius:11px;cursor:pointer;font-family:'Orbitron';font-weight:800;font-size:12.5px;
+  color:#2a1400;background:linear-gradient(90deg,#ff7a2f,#ffc24d);box-shadow:0 0 18px rgba(255,130,40,.6);animation:ragepulse 1s ease-in-out infinite}
+@keyframes ragepulse{0%,100%{transform:scale(1);box-shadow:0 0 14px rgba(255,130,40,.5)}50%{transform:scale(1.03);box-shadow:0 0 26px rgba(255,150,60,.85)}}
+.rageactive{margin-top:8px;text-align:center;font-family:'Orbitron';font-size:11px;color:#ffb648;padding:7px;border-radius:10px;background:rgba(255,120,40,.12);border:1px solid rgba(255,120,40,.35)}
+.scene.rage .zonetint{opacity:.5;background:radial-gradient(ellipse at 50% 128%,#ff7a2f,transparent 60%)}
+/* Misiones */
+.mis{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.mis:last-child{border-bottom:none}
+.mis .mico{font-size:20px;width:28px;text-align:center;flex:none}
+.mis .mbody{flex:1;min-width:0}
+.mis .mn{font-size:12.5px;color:#e8eefc;font-weight:600}
+.mis .mp{height:6px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:4px}
+.mis .mp i{display:block;height:100%;background:linear-gradient(90deg,var(--cyan),var(--cyan-b))}
+.mis .mmeta{font-size:10px;color:var(--muted);margin-top:3px}
+.mis .mclaim{flex:none;padding:7px 11px;border:none;border-radius:9px;font-family:'Orbitron';font-size:10px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--gold),#ffe08a);color:#2a1e00}
+.mis .mclaim.dis{background:rgba(255,255,255,.06);color:var(--muted);cursor:default}
+.mis.done .mn{color:var(--gold)}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -332,21 +354,6 @@ canvas.cv-pixel{image-rendering:pixelated}
 </style>
 </head>
 <body>
-
-<div id="pwgate" style="position:fixed;inset:0;z-index:99999;background:#05070f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-family:Orbitron,system-ui,sans-serif;color:#e8eefc;padding:20px;text-align:center">
-  <div style="font-family:Orbitron;font-size:24px;font-weight:900;background:linear-gradient(90deg,#fff,#3fb4ff);-webkit-background-clip:text;background-clip:text;color:transparent">STEPQUEST</div>
-  <div style="color:#8a97b8;font-size:14px;max-width:280px">Demo privada. Introduce la contraseña para probarla.</div>
-  <input id="pwin" type="password" placeholder="Contraseña" style="padding:12px 14px;border-radius:10px;border:1px solid rgba(96,150,255,.3);background:#0a1020;color:#e8eefc;font-size:15px;outline:none;text-align:center;width:220px">
-  <button id="pwbtn" style="padding:11px 24px;border:none;border-radius:10px;background:linear-gradient(90deg,#3fb4ff,#67d3ff);color:#03121f;font-weight:700;font-family:Orbitron;cursor:pointer">ENTRAR</button>
-  <div id="pwerr" style="color:#ff4d6d;font-size:12px;height:14px"></div>
-</div>
-<script>
-(function(){function chk(){var v=document.getElementById('pwin').value;if(v.toLowerCase()==='stepquest'){var g=document.getElementById('pwgate');if(g)g.remove();}else{document.getElementById('pwerr').textContent='Contraseña incorrecta';}}
-document.getElementById('pwbtn').addEventListener('click',chk);
-document.getElementById('pwin').addEventListener('keydown',function(e){if(e.key==='Enter')chk();});
-setTimeout(function(){document.getElementById('pwin').focus();},100);})();
-</script>
-
   <h1 class="title">STEPQUEST · DEMO</h1>
   <div class="subtitle">Prototipo interactivo para afinar mecánicas. Toca los botones y navega como si fuera la app real.</div>
   <div class="hint">🟡 Debajo del móvil tienes los controles de demo (simulan tu actividad real). No son parte del juego.</div>
@@ -426,6 +433,10 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
           <div class="mut" style="font-size:11.5px;margin:5px 0 6px">Tu Cazador avanza <b style="color:var(--cyan-b)">solo con tus pasos</b>. Cada <b style="color:#a78bfa">100 pasos = 1 avance</b>: enemigos, oro y cofres. Sigue avanzando aunque cierres la app.</div>
           <div class="row"><span class="mono" style="font-size:10px;color:var(--muted)">🌙 Pasos guardados (offline)</span><span class="mono" style="font-size:13px;color:var(--cyan-b);font-weight:700"><span id="home-saved">0</span></span></div>
         </div>
+        <div class="card">
+          <div class="row" style="margin-bottom:4px"><span class="h" style="margin:0">🎯 Misiones</span><span class="mono" style="font-size:10px;color:var(--muted)" id="mis-count"></span></div>
+          <div id="missions"></div>
+        </div>
         <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
       </div>
 
@@ -460,6 +471,12 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
             <span class="ember" style="left:86%;animation-delay:1.8s"></span>
             <div class="wshadow"></div>
             <canvas id="walk-canvas" width="64" height="64" class="cv-pixel game-sprite" style="position:absolute;left:50%;bottom:19%;transform:translateX(-50%);width:112px;height:112px;z-index:3"></canvas>
+          </div>
+          <div class="ragewrap">
+            <div class="ragetop"><span>⚡ FURIA DEL CAZADOR</span><span id="rage-pct" class="mono">0%</span></div>
+            <div class="ragebar"><i id="rage-fill"></i></div>
+            <button id="rage-btn" class="ragebtn" onclick="unleashRage()" style="display:none">⚡ ¡DESATAR FURIA! · x2 recompensas</button>
+            <div id="rage-active" class="rageactive" style="display:none">🔥 FURIA ACTIVA · x2 durante <span id="rage-left">0</span> avances</div>
           </div>
           <div class="log" id="walk-log" style="text-align:center">Tu Cazador explora la zona...</div>
           <div id="exp-feed" class="expfeed"></div>
@@ -582,7 +599,7 @@ setTimeout(function(){document.getElementById('pwin').focus();},100);})();
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v2 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v3 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -600,6 +617,7 @@ const S = {
   inventory:[],
   screen:'onboarding',
   cleared:{}, shopMode:'buy',
+  m:{kills:0,loot:0,boss:0,gold:0}, mClaimed:{},
   dg:null
 };
 const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
@@ -656,8 +674,43 @@ function renderHome(){
   const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓ cumplida';
   $('home-saved').textContent=fmt(S.savedSteps||0);
   const fr=frontierRegion(); $('home-expname').textContent=fr?fr.name:'Todo despejado ✓';
+  renderMissions();
 }
 function frontierRegion(){ return REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]); }
+/* ---------- Misiones ---------- */
+const MISSIONS=[
+  {id:'kills', ico:'⚔️', name:'Cazador en ascenso', desc:'Vence enemigos', target:25, get:()=>S.m.kills, reward:{gems:5,gold:120}},
+  {id:'loot',  ico:'🎁', name:'Buscatesoros',       desc:'Encuentra objetos', target:8, get:()=>S.m.loot, reward:{gems:6}},
+  {id:'boss',  ico:'👑', name:'Matajefes',           desc:'Derrota jefes', target:2, get:()=>S.m.boss, reward:{gems:12,gold:300}},
+  {id:'gold',  ico:'🪙', name:'Fortuna',             desc:'Gana oro en total', target:1500, get:()=>S.m.gold, reward:{gems:8}},
+  {id:'steps', ico:'👣', name:'Maratoniano',         desc:'Camina pasos', target:20000, get:()=>S.steps, reward:{gems:8,gold:250}}
+];
+function renderMissions(){
+  const el=$('missions'); if(!el)return; el.innerHTML='';
+  let pend=0;
+  MISSIONS.forEach(m=>{
+    const cur=Math.min(m.get(),m.target), done=m.get()>=m.target, claimed=!!S.mClaimed[m.id];
+    if(!claimed) pend++;
+    if(claimed) return;
+    const rw=(m.reward.gold?('+'+m.reward.gold+' 🪙 '):'')+(m.reward.gems?('+'+m.reward.gems+' 💎'):'');
+    const d=document.createElement('div'); d.className='mis'+(done?' done':'');
+    d.innerHTML='<div class="mico">'+m.ico+'</div>'+
+      '<div class="mbody"><div class="mn">'+m.name+'</div>'+
+      '<div class="mp"><i style="width:'+(cur/m.target*100)+'%"></i></div>'+
+      '<div class="mmeta">'+m.desc+': '+fmt(cur)+' / '+fmt(m.target)+' · '+rw+'</div></div>'+
+      '<button class="mclaim'+(done?'':' dis')+'"'+(done?' onclick="claimMission(\''+m.id+'\')"':' disabled')+'>'+(done?'Reclamar':'…')+'</button>';
+    el.appendChild(d);
+  });
+  if(pend===0){ el.innerHTML='<div class="mut" style="text-align:center;padding:10px;font-size:12px">✓ ¡Todas las misiones completadas! Más pronto…</div>'; }
+  $('mis-count').textContent=pend>0?(pend+' activas'):'';
+}
+function claimMission(id){
+  const m=MISSIONS.find(x=>x.id===id); if(!m||S.mClaimed[id]||m.get()<m.target)return;
+  S.mClaimed[id]=true;
+  if(m.reward.gold)S.gold+=m.reward.gold; if(m.reward.gems)S.gems+=m.reward.gems;
+  showToast('🎯','LEG','¡Misión cumplida!',m.name+' · '+((m.reward.gold?'+'+m.reward.gold+' 🪙 ':'')+(m.reward.gems?'+'+m.reward.gems+' 💎':'')));
+  renderHome();
+}
 function gainXP(amount){
   S.exp+=amount;
   while(S.exp>=S.expMax){ S.exp-=S.expMax; levelUp(); }
@@ -729,12 +782,13 @@ const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['A
 function leaveDungeon(){ const d=S.dg; if(d&&d.timer)clearTimeout(d.timer); if(d){ S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); } S.dg=null; go('mapa'); }
 function enterDungeon(r){
   S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
-  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false};
+  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
   $('dg-title').textContent=r.name;
   $('walk-scene').style.setProperty('--zone', r.color);
   $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').classList.remove('rage');
   $('exp-feed').innerHTML='';
-  go('dungeon'); showWalk(); updateExpUI();
+  go('dungeon'); showWalk(); updateExpUI(); updateRageUI();
   const saved=S.savedSteps||0;
   if(saved>0){
     S.savedSteps=0; S.dg.strideBuf+=saved;
@@ -757,6 +811,7 @@ function updateExpUI(){
   $('dg-stridebar').style.width=within+'%';
   $('dg-hp2').textContent=Math.max(0,Math.round(S.hp))+'/'+S.hpMax;
   $('dg-saved').textContent=fmt(S.savedSteps||0);
+  updateRageUI();
 }
 function updateDungeonUI(){ if(!S.dg)return; updateExpUI(); if(S.dg.phase==='combat')renderCombat(); }
 function refreshCurr(){ $('c-gold').textContent=fmt(S.gold); $('c-gems').textContent=S.gems; }
@@ -783,22 +838,41 @@ function runExpedition(){
 }
 function roomEvent(){
   const d=S.dg, base=d.r.minLv, roll=Math.random();
+  const rage=(d.rageActive>0), mult=rage?2:1, tag=rage?'🔥 ':'';
   S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.05));   // recupera algo entre salas
   if(roll<0.60){
     const mob=EXP_MOBS[Math.floor(Math.random()*EXP_MOBS.length)];
-    const dmg=Math.max(0,Math.round((base*2+3)*(0.5+Math.random()*0.5)-totalStat('resistencia')*0.7));
+    const dmg=rage?0:Math.max(0,Math.round((base*2+3)*(0.5+Math.random()*0.5)-totalStat('resistencia')*0.7));
     S.hp=Math.max(1,S.hp-dmg);
-    const xp=base*7+8, gold=8+Math.floor(Math.random()*12)+base;
-    S.gold+=gold; gainXP(xp);
-    pushFeed('⚔️',null,'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
-    if(Math.random()<0.13+totalStat('suerte')*0.004){ const it=makeItem(Math.random()<0.22); pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); }
+    const xp=(base*7+8)*mult, gold=(8+Math.floor(Math.random()*12)+base)*mult;
+    S.gold+=gold; gainXP(xp); S.m.kills++; S.m.gold+=gold;
+    pushFeed('⚔️',null,tag+'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
+    if(Math.random()<(rage?0.4:0.13)+totalStat('suerte')*0.004){ const it=makeItem(rage||Math.random()<0.22); pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); S.m.loot++; }
   } else if(roll<0.82){
-    const gold=14+Math.floor(Math.random()*20)+base*2; S.gold+=gold;
-    pushFeed('💰',null,'Tesoro encontrado','+'+gold+' 🪙');
+    const gold=(14+Math.floor(Math.random()*20)+base*2)*mult; S.gold+=gold; S.m.gold+=gold;
+    pushFeed('💰',null,tag+'Tesoro encontrado','+'+gold+' 🪙');
   } else {
-    if(Math.random()<0.65){ const it=makeItem(Math.random()<0.28); pushFeed(it.ico,it.rar,'Cofre: '+it.name,statText(it)); }
-    else { const g=1+Math.floor(Math.random()*3); S.gems+=g; pushFeed('🎁','epica','Cofre de gemas','+'+g+' 💎'); }
+    if(Math.random()<0.65){ const it=makeItem(rage||Math.random()<0.28); pushFeed(it.ico,it.rar,tag+'Cofre: '+it.name,statText(it)); S.m.loot++; }
+    else { const g=(1+Math.floor(Math.random()*3))*mult; S.gems+=g; pushFeed('🎁','epica',tag+'Cofre de gemas','+'+g+' 💎'); }
   }
+  if(d.rageActive>0){ d.rageActive--; if(d.rageActive===0)$('walk-scene').classList.remove('rage'); }
+  else { d.rage=Math.min(100,(d.rage||0)+22); }
+  updateRageUI();
+}
+function updateRageUI(){
+  const d=S.dg; if(!d)return;
+  const pct=Math.round(d.rage||0), on=d.rageActive>0;
+  $('rage-pct').textContent=on?'ACTIVA':pct+'%';
+  $('rage-fill').style.width=(on?100:pct)+'%';
+  $('rage-btn').style.display=(!on && pct>=100 && d.phase==='auto')?'block':'none';
+  $('rage-active').style.display=on?'block':'none';
+  if(on)$('rage-left').textContent=d.rageActive;
+}
+function unleashRage(){
+  const d=S.dg; if(!d||(d.rage||0)<100||d.rageActive>0)return;
+  d.rageActive=4; d.rage=0; $('walk-scene').classList.add('rage');
+  showToast('⚡','LEG','¡FURIA DESATADA!','x2 recompensas · próximos 4 avances');
+  updateRageUI(); runExpedition();
 }
 function startBoss(){
   const d=S.dg, base=d.r.minLv;
@@ -948,7 +1022,7 @@ function enemyDown(){
   d.phase='reward';
   const xp=wasBoss?d.r.minLv*30+40:d.r.minLv*8+10;
   const gold=wasBoss?150:12+Math.floor(Math.random()*16);
-  S.gold+=gold; gainXP(xp);
+  S.gold+=gold; gainXP(xp); S.m.gold+=gold; if(wasBoss)S.m.boss++;
   showReward(rollReward(wasBoss,xp,gold),wasBoss);
 }
 function rollReward(boss,xp,gold){
