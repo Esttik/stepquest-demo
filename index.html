@@ -286,6 +286,29 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .mis .mclaim{flex:none;padding:7px 11px;border:none;border-radius:9px;font-family:'Orbitron';font-size:10px;font-weight:700;cursor:pointer;background:linear-gradient(90deg,var(--gold),#ffe08a);color:#2a1e00}
 .mis .mclaim.dis{background:rgba(255,255,255,.06);color:var(--muted);cursor:default}
 .mis.done .mn{color:var(--gold)}
+/* Arena */
+.opp{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02)}
+.opp .oico{font-size:26px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3);flex:none}
+.opp .oinfo{flex:1;min-width:0}
+.opp .on{font-size:14px;color:#e8eefc;font-weight:600}
+.opp .os{font-size:11px;color:var(--muted);margin-top:2px}
+.opp .obtn{flex:none;padding:9px 16px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:700;font-size:12px;cursor:pointer;background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#2a0008}
+.bdrow{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:12.5px}
+.bdrow:last-child{border-bottom:none}
+.bdrow .bdr{width:22px;text-align:center;color:var(--muted);font-family:'Orbitron';font-size:11px}
+.bdrow .bdn{flex:1;color:#e8eefc}
+.bdrow .bdt{color:var(--gold);font-family:'Orbitron';font-size:11px}
+.bdrow.me{background:rgba(63,180,255,.1);border-radius:8px}
+.bdrow.me .bdn{color:var(--cyan-b);font-weight:700}
+.ar-fight{display:flex;align-items:center;gap:8px;width:100%;margin:10px 0 4px}
+.ar-side{flex:1}
+.ar-nm{font-family:'Orbitron';font-size:12px;color:#e8eefc;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-hpbar{height:14px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(96,150,255,.2)}
+.ar-hpbar i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#38e5a0,#7bffbf);transition:width .25s}
+.ar-hpbar.op i{background:linear-gradient(90deg,#ff4d6d,#ff8fa3)}
+.ar-vs{font-family:'Orbitron';font-weight:800;color:var(--muted);font-size:13px}
+.enemy-sprite.charging{animation:charge .5s ease-in-out infinite;filter:drop-shadow(0 0 22px rgba(255,120,40,.95))!important}
+@keyframes charge{0%,100%{transform:scaleX(-1) scale(1)}50%{transform:scaleX(-1) scale(1.14)}}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -555,6 +578,21 @@ canvas.cv-pixel{image-rendering:pixelated}
         <div id="shop" style="margin-top:8px"></div>
       </div>
 
+      <!-- ARENA -->
+      <div class="screen" id="s-arena">
+        <div class="row"><div class="sec-title">⚔️ Arena PvP</div><span class="mono" style="font-size:12px;color:var(--gold)" id="ar-rank">🏆 0</span></div>
+        <div class="card">
+          <div class="row"><span class="h" style="margin:0">Tu liga</span><span class="mono" id="ar-tier" style="font-weight:700">Bronce</span></div>
+          <div class="mut" style="font-size:11.5px;margin-top:3px">Luchas contra la <b>build</b> de otros cazadores (su copia). Gana trofeos, sube de liga y llévate cofres. <b id="ar-pow" style="color:var(--cyan-b)"></b></div>
+        </div>
+        <div class="row" style="margin-top:2px"><div class="sec-title" style="font-size:13px">Rivales</div><button class="btn ghost" style="padding:5px 10px;font-size:11px" onclick="refreshOpps()">🔄 Buscar rivales</button></div>
+        <div id="ar-opps" style="display:flex;flex-direction:column;gap:10px"></div>
+        <div class="card" style="margin-top:8px">
+          <div class="h">🏆 Clasificación</div>
+          <div id="ar-board"></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- toast + overlay live inside phone -->
@@ -575,6 +613,17 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button class="btn gold" style="width:70%;margin-top:8px" onclick="rewardContinue()">RECOGER</button>
     </div>
     <div class="overlay" id="slot-ov"><div id="slot-ov-inner" style="display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;padding:0 6px"></div></div>
+    <div class="overlay" id="arena-ov">
+      <div class="mono" style="color:var(--cyan-b);letter-spacing:3px;font-size:12px">◈ COMBATE DE ARENA ◈</div>
+      <div class="ar-fight">
+        <div class="ar-side"><div class="ar-nm" id="af-me">Tú</div><div class="ar-hpbar"><i id="af-mehp"></i></div></div>
+        <div class="ar-vs">VS</div>
+        <div class="ar-side"><div class="ar-nm" id="af-op">Rival</div><div class="ar-hpbar op"><i id="af-ophp"></i></div></div>
+      </div>
+      <div id="af-log" class="mut" style="height:18px;font-size:12px">¡Empieza el combate!</div>
+      <div id="af-result" style="font-family:'Orbitron';font-weight:800;font-size:24px;opacity:0;transition:.3s;margin-top:2px"></div>
+      <button class="btn" id="af-btn" style="width:70%;margin-top:8px;display:none" onclick="closeArenaOv()">CONTINUAR</button>
+    </div>
 
     <!-- bottom nav -->
     <div class="botnav" id="botnav" style="display:none">
@@ -582,6 +631,7 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button data-nav="mapa" onclick="go('mapa')">🗺️</button>
       <button data-nav="mochila" onclick="go('mochila')">🎒</button>
       <button data-nav="personaje" onclick="go('personaje')">🛡️</button>
+      <button data-nav="arena" onclick="go('arena')">⚔️</button>
       <button data-nav="tienda" onclick="go('tienda')">🏪</button>
     </div>
   </div>
@@ -599,7 +649,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v3 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v4 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -618,6 +668,7 @@ const S = {
   screen:'onboarding',
   cleared:{}, shopMode:'buy',
   m:{kills:0,loot:0,boss:0,gold:0}, mClaimed:{},
+  arena:{trophies:0,wins:0,losses:0,opps:null,board:null},
   dg:null
 };
 const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
@@ -653,6 +704,7 @@ function go(scr){
   if(scr==='mochila') renderInv();
   if(scr==='personaje') renderHero();
   if(scr==='tienda') renderShop();
+  if(scr==='arena') renderArena();
   if(scr==='home') renderHome();
   $('screenwrapscroll');
   document.querySelector('.screenwrap').scrollTop=0;
@@ -711,6 +763,97 @@ function claimMission(id){
   showToast('🎯','LEG','¡Misión cumplida!',m.name+' · '+((m.reward.gold?'+'+m.reward.gold+' 🪙 ':'')+(m.reward.gems?'+'+m.reward.gems+' 💎':'')));
   renderHome();
 }
+/* ---------- ARENA PvP (asíncrona vs builds simuladas) ---------- */
+function heroPower(){ return Math.round(totalStat('fuerza')*3+totalStat('agilidad')*2.2+totalStat('vitalidad')*2+totalStat('resistencia')*2+totalStat('suerte')*1.6+S.level*6); }
+function heroCombatant(){ return {name:S.name, hp:S.hpMax, hpMax:S.hpMax, atk:totalStat('fuerza')*2+6, def:totalStat('resistencia')*0.7, crit:Math.min(70,totalStat('agilidad')*0.9+totalStat('suerte')*0.6), pow:heroPower()}; }
+const ARENK=[[0,'Bronce','#cd7f32'],[300,'Plata','#c4ccd6'],[700,'Oro','#f5c451'],[1200,'Diamante','#5fd0ff'],[2000,'Leyenda','#ff6ad5']];
+function arenaRank(t){let r=ARENK[0];for(const x of ARENK){if(t>=x[0])r=x;}return r;}
+const BOTNAMES=['Ragnar','Sombra','Kira','Draven','Lyra','Thorne','Vex','Nyx','Orion','Mira','Zane','Cael','Ashra','Bane','Iris','Krull'];
+const BOTICO=['🗡️','🪓','🏹','🔮','🛡️','⚔️','🔱'];
+function genOpps(){
+  const me=heroCombatant(), facs=[0.80,1.0,1.24];
+  S.arena.opps=facs.map((f,i)=>{
+    const seed=(S.level*7+i*5+S.arena.wins*3+S.arena.losses)%BOTNAMES.length;
+    return {name:BOTNAMES[seed], lv:Math.max(1,Math.round(S.level*f)),
+      hp:Math.round(me.hpMax*f), hpMax:Math.round(me.hpMax*f),
+      atk:Math.max(5,Math.round(me.atk*f)), def:me.def*f, crit:Math.min(60,me.crit*f*0.9),
+      pow:Math.max(20,Math.round(me.pow*f)), ico:BOTICO[(i+S.level)%BOTICO.length]};
+  });
+}
+function refreshOpps(){ genOpps(); renderArena(); }
+function ensureBoard(){ if(S.arena.board)return; const base=[1880,1440,1190,960,770,620,485,360,255,175];
+  S.arena.board=base.map((t,i)=>({name:BOTNAMES[(i*2)%BOTNAMES.length], troph:t})); }
+function renderBoard(){
+  ensureBoard();
+  const list=S.arena.board.map(b=>({name:b.name,troph:b.troph,me:false}));
+  list.push({name:S.name+' (tú)',troph:S.arena.trophies,me:true});
+  list.sort((a,b)=>b.troph-a.troph);
+  const el=$('ar-board'); el.innerHTML='';
+  list.slice(0,8).forEach((b,i)=>{ const d=document.createElement('div'); d.className='bdrow'+(b.me?' me':'');
+    d.innerHTML='<span class="bdr">'+(i+1)+'</span><span class="bdn">'+b.name+'</span><span class="bdt">🏆 '+b.troph+'</span>'; el.appendChild(d); });
+}
+function renderArena(){
+  ensureBoard(); if(!S.arena.opps)genOpps();
+  const rk=arenaRank(S.arena.trophies), me=heroPower();
+  $('ar-rank').textContent='🏆 '+S.arena.trophies;
+  $('ar-tier').textContent=rk[1]; $('ar-tier').style.color=rk[2];
+  $('ar-pow').textContent='Tu poder: '+me;
+  const el=$('ar-opps'); el.innerHTML='';
+  S.arena.opps.forEach((o,i)=>{
+    const diff=o.pow-me;
+    const tag= diff<-me*0.08?'<span style="color:var(--green)">Fácil</span>': diff>me*0.08?'<span style="color:var(--red)">Difícil</span>':'<span style="color:var(--gold)">Igualado</span>';
+    const d=document.createElement('div'); d.className='opp';
+    d.innerHTML='<div class="oico">'+o.ico+'</div>'+
+      '<div class="oinfo"><div class="on">'+o.name+' <span class="mut" style="font-size:10px">· Nv '+o.lv+'</span></div><div class="os">Poder '+o.pow+' · '+tag+'</div></div>'+
+      '<button class="obtn" onclick="challenge('+i+')">Luchar</button>';
+    el.appendChild(d);
+  });
+  renderBoard();
+}
+function hitDmg(a,b){ const crit=Math.random()*100<a.crit; const d=Math.max(1,Math.round((a.atk*(0.85+Math.random()*0.3))*(crit?1.9:1)-b.def)); return {d,crit}; }
+function simFight(A,B){
+  let a=Object.assign({},A), b=Object.assign({},B), rounds=[], turn=0;
+  while(a.hp>0&&b.hp>0&&turn<45){ turn++;
+    let r=hitDmg(a,b); b.hp=Math.max(0,b.hp-r.d); rounds.push({who:'A',dmg:r.d,crit:r.crit,ahp:a.hp,bhp:b.hp});
+    if(b.hp<=0)break;
+    r=hitDmg(b,a); a.hp=Math.max(0,a.hp-r.d); rounds.push({who:'B',dmg:r.d,crit:r.crit,ahp:a.hp,bhp:b.hp});
+  }
+  return {rounds, win:a.hp>0?'A':'B', aMax:A.hpMax, bMax:B.hpMax};
+}
+let arT;
+function challenge(i){
+  const opp=S.arena.opps[i]; if(!opp)return;
+  const me=heroCombatant(), res=simFight(me,opp);
+  $('af-me').textContent=me.name; $('af-op').textContent=opp.name;
+  $('af-mehp').style.width='100%'; $('af-ophp').style.width='100%';
+  $('af-result').style.opacity='0'; $('af-result').textContent=''; $('af-btn').style.display='none';
+  $('af-log').textContent='¡Empieza el combate!';
+  $('arena-ov').classList.add('show');
+  let k=0; clearInterval(arT);
+  arT=setInterval(()=>{
+    if(k>=res.rounds.length){ clearInterval(arT); finishArena(me,opp,res); return; }
+    const r=res.rounds[k++];
+    $('af-mehp').style.width=(Math.max(0,r.ahp)/res.aMax*100)+'%';
+    $('af-ophp').style.width=(Math.max(0,r.bhp)/res.bMax*100)+'%';
+    $('af-log').innerHTML=(r.who==='A'?me.name:opp.name)+' golpea · <b>'+r.dmg+'</b>'+(r.crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
+  },300);
+}
+function finishArena(me,opp,res){
+  const win=res.win==='A'; let dt;
+  if(win){ dt=18+Math.floor(Math.random()*16); S.arena.trophies+=dt; S.arena.wins++;
+    const gold=45+opp.lv*8, gems=(Math.random()<0.35?1+Math.floor(Math.random()*2):0);
+    S.gold+=gold; S.gems+=gems; S.m.gold+=gold;
+    $('af-result').style.color='var(--green)'; $('af-result').textContent='¡VICTORIA!';
+    $('af-log').innerHTML='+'+dt+' 🏆 · +'+gold+' 🪙'+(gems?' · +'+gems+' 💎':'');
+    showToast('🏆','LEG','¡Victoria en la Arena!','+'+dt+' trofeos');
+  } else { dt=Math.min(S.arena.trophies,10+Math.floor(Math.random()*10)); S.arena.trophies-=dt; S.arena.losses++;
+    $('af-result').style.color='var(--red)'; $('af-result').textContent='DERROTA';
+    $('af-log').innerHTML='−'+dt+' 🏆 · Sube tu poder ('+heroPower()+') y vuelve';
+  }
+  $('af-result').style.opacity='1'; $('af-btn').style.display='block';
+  genOpps();
+}
+function closeArenaOv(){ $('arena-ov').classList.remove('show'); renderArena(); refreshCurr(); }
 function gainXP(amount){
   S.exp+=amount;
   while(S.exp>=S.expMax){ S.exp-=S.expMax; levelUp(); }
@@ -837,13 +980,15 @@ function runExpedition(){
   })();
 }
 function roomEvent(){
-  const d=S.dg, base=d.r.minLv, roll=Math.random();
+  const d=S.dg, base=d.r.minLv, chal=Math.max(base,S.level), roll=Math.random();
   const rage=(d.rageActive>0), mult=rage?2:1, tag=rage?'🔥 ':'';
-  S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.05));   // recupera algo entre salas
-  if(roll<0.60){
+  S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.03));   // recupera algo entre salas
+  if(roll<0.62){
     const mob=EXP_MOBS[Math.floor(Math.random()*EXP_MOBS.length)];
-    const dmg=rage?0:Math.max(0,Math.round((base*2+3)*(0.5+Math.random()*0.5)-totalStat('resistencia')*0.7));
-    S.hp=Math.max(1,S.hp-dmg);
+    const raw=Math.round((chal*2.6+5)*(0.6+Math.random()*0.6));
+    const dmg=rage?Math.round(raw*0.35):Math.max(0,raw-Math.round(totalStat('resistencia')*0.6));
+    S.hp-=dmg;
+    if(S.hp<=0){ pushFeed('💀',null,'Te supera '+mob[0]+' '+mob[1],'Has caído en la expedición'); failExpedition(); return; }
     const xp=(base*7+8)*mult, gold=(8+Math.floor(Math.random()*12)+base)*mult;
     S.gold+=gold; gainXP(xp); S.m.kills++; S.m.gold+=gold;
     pushFeed('⚔️',null,tag+'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
@@ -858,6 +1003,11 @@ function roomEvent(){
   if(d.rageActive>0){ d.rageActive--; if(d.rageActive===0)$('walk-scene').classList.remove('rage'); }
   else { d.rage=Math.min(100,(d.rage||0)+22); }
   updateRageUI();
+}
+function failExpedition(){
+  const d=S.dg; if(!d)return; d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
+  $('walk-scene').classList.remove('walking','rage'); updateExpUI();
+  setTimeout(()=>{ S.hp=S.hpMax; showToast('💀','RARA','Expedición fallida','Te retiras malherido. Sube tu poder y vuelve.'); S.dg=null; go('mapa'); },1300);
 }
 function updateRageUI(){
   const d=S.dg; if(!d)return;
@@ -875,12 +1025,14 @@ function unleashRage(){
   updateRageUI(); runExpedition();
 }
 function startBoss(){
-  const d=S.dg, base=d.r.minLv;
-  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:base*34+110,hpMax:base*34+110,atk:base*3+6,boss:true};
+  const d=S.dg, lv=Math.max(d.r.minLv,S.level);
+  const hp=lv*30+d.r.minLv*20+120;
+  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*3+8,boss:true};
+  d.turns=0; d.telegraph=false;
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
-  $('en-sprite').textContent=d.enemy.emo;
-  $('dg-log').innerHTML='⚠️ <b>'+d.enemy.name+'</b> te cierra el paso. ¡Derrótalo tú mismo!';
+  $('en-sprite').textContent=d.enemy.emo; $('en-sprite').classList.remove('charging');
+  $('dg-log').innerHTML='⚠️ <b>'+d.enemy.name+'</b> te cierra el paso. Vigila su <b style="color:#ffb648">golpe brutal</b> y usa 🛡️ Defender a tiempo.';
   showCombat(); renderCombat(); updateExpUI();
 }
 const SKILLS=[
@@ -917,7 +1069,9 @@ function renderCmd(){
     if(!any) h+='<div class="mut" style="text-align:center;padding:8px">No te quedan objetos.</div>';
     h+='<button class="cmd-back" onclick="backMenu()">◀ Volver</button></div>';
   } else {
-    h='<div class="actions4">'+
+    const tg=d.telegraph;
+    h=(tg?'<button class="btn" style="width:100%;margin-bottom:8px;background:linear-gradient(90deg,#ffb648,#ff7a2f);color:#2a1400;font-weight:800;animation:ragepulse 1s infinite" onclick="cmdDefend()">🛡️ ¡DEFENDER EL GOLPE!</button>':'')+
+      '<div class="actions4">'+
       '<button class="btn" onclick="cmdAttack()">⚔️ Atacar</button>'+
       '<button class="btn violet" onclick="openMenu(\'magia\')">🔮 Magia</button>'+
       '<button class="btn gold" onclick="openMenu(\'objeto\')">🎒 Objeto</button>'+
@@ -977,9 +1131,25 @@ function cmdFlee(){ if(!S.dg||S.dg.phase!=='combat')return; S.dg.menu='main';
 }
 function enemyStrike(){
   const d=S.dg,e=d.enemy; if(!e||e.hp<=0||d.phase!=='combat')return;
+  if(d.telegraph){ // no defendió a tiempo -> golpe brutal
+    d.telegraph=false; $('en-sprite').classList.remove('charging');
+    const dmg=Math.round(S.hpMax*0.4);
+    S.hp-=dmg; $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' descarga el golpe brutal</b> · −'+dmg+'❤';
+    renderCombat(); if(S.hp<=0){playerDown();return;} renderCmd(); return;
+  }
   const dmg=Math.max(1,Math.round(e.atk*(0.8+Math.random()*0.4)-totalStat('resistencia')*0.7));
   S.hp-=dmg; renderCombat();
-  if(S.hp<=0)playerDown();
+  if(S.hp<=0){playerDown();return;}
+  if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ d.telegraph=true; $('en-sprite').classList.add('charging');
+    $('dg-log').innerHTML='⚠️ <b style="color:#ffb648">¡'+e.name+' prepara un GOLPE BRUTAL! Usa 🛡️ Defender.</b>'; renderCmd(); } }
+}
+function cmdDefend(){
+  const d=S.dg; if(!d||d.phase!=='combat')return; d.menu='main';
+  if(d.telegraph){ d.telegraph=false; $('en-sprite').classList.remove('charging');
+    const dmg=Math.round(S.hpMax*0.05); S.hp=Math.max(1,S.hp-dmg);
+    $('dg-log').innerHTML='🛡️ <b style="color:var(--green)">¡Bloqueas el golpe brutal!</b> Solo −'+dmg+'❤'; renderCombat(); renderCmd();
+  } else { const heal=Math.round(S.hpMax*0.06); S.hp=Math.min(S.hpMax,S.hp+heal);
+    $('dg-log').innerHTML='🛡️ Te cubres y recuperas · +'+heal+'❤'; renderCombat(); setTimeout(enemyStrike,520); }
 }
 function playerDown(){
   S.dg.phase='down';
