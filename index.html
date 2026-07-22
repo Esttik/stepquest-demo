@@ -337,7 +337,7 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .dodgehint{font-size:11px;color:#ff8fa3;text-align:center;margin-bottom:6px;font-family:'Orbitron'}
 .dodgetrack{position:relative;height:28px;border-radius:14px;background:rgba(255,255,255,.07);overflow:hidden;border:1px solid var(--line)}
 .dodgezone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(56,229,160,.35),rgba(56,229,160,.55));border-left:2px solid var(--green);border-right:2px solid var(--green)}
-.dodgemarker{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;box-shadow:0 0 12px #fff;border-radius:2px}
+.dodgemarker{position:absolute;top:-3px;bottom:-3px;width:6px;background:#fff;box-shadow:0 0 12px #fff;border-radius:3px;transform:translateX(-50%)}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -693,7 +693,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v10 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v11 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1273,7 +1273,7 @@ function renderCmd(){
   let h='';
   if(d.dodge){
     const zoneLeft=Math.max(0,d.zoneC-d.zoneHalf), zoneW=Math.min(100,d.zoneHalf*2);
-    $('cmd-area').innerHTML='<div class="dodgewrap"><div class="dodgehint">⚡ TIMING · esquiva en la zona verde</div><div class="dodgetrack"><div class="dodgezone" style="left:'+zoneLeft+'%;width:'+zoneW+'%"></div><div class="dodgemarker" id="dodge-marker" style="left:'+d.dodgePos+'%"></div></div><button class="btn" style="width:100%;margin-top:9px;background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#2a0008;font-weight:800" onclick="dodgeTap()">🛡️ ¡ESQUIVAR!</button></div>';
+    $('cmd-area').innerHTML='<div class="dodgewrap"><div class="dodgehint">⚡ TIMING · toca cuando el marcador esté en el verde · +Agilidad = más verde</div><div class="dodgetrack"><div class="dodgezone" id="dodge-zone-el" style="left:'+zoneLeft+'%;width:'+zoneW+'%"></div><div class="dodgemarker" id="dodge-marker" style="left:'+d.dodgePos+'%"></div></div><button class="btn" style="width:100%;margin-top:9px;background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#2a0008;font-weight:800;touch-action:manipulation" onpointerdown="dodgeTap()">🛡️ ¡ESQUIVAR!</button></div>';
     return;
   }
   if(d.menu==='magia'){
@@ -1360,10 +1360,11 @@ function startDodge(){
   const d=S.dg,e=d.enemy; if(!d||!e)return;
   d.dodge=true; d.telegraph=true;
   const agi=totalStat('agilidad');
-  d.zoneHalf=Math.min(30, 9+agi*0.5);           // agilidad ensancha la zona segura
-  d.zoneC=22+Math.random()*56;
+  d.zoneHalf=Math.min(36, 14+agi*0.6);          // agilidad ensancha la zona segura
+  const span=Math.max(8, 100-2*d.zoneHalf-12);  // mantener la zona dentro de la barra
+  d.zoneC=d.zoneHalf+6+Math.random()*span;
   d.dodgeDir=1; d.dodgePos=Math.random()*100;
-  const spd=Math.max(0.9, 2.4-agi*0.035);       // agilidad ralentiza el marcador
+  const spd=Math.max(0.5, 1.05-agi*0.014);      // marcador MÁS LENTO y legible
   $('en-sprite').classList.add('charging'); sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
   renderCmd();
@@ -1376,7 +1377,14 @@ function startDodge(){
   })();
   d.dodgeTO=setTimeout(()=>{ if(S.dg&&S.dg.dodge) resolveDodge(false); }, 3000);
 }
-function dodgeTap(){ const d=S.dg; if(!d||!d.dodge)return; resolveDodge(Math.abs(d.dodgePos-d.zoneC)<=d.zoneHalf); }
+function dodgeTap(){
+  const d=S.dg; if(!d||!d.dodge)return;
+  if(d.dodgeRAF){ cancelAnimationFrame(d.dodgeRAF); d.dodgeRAF=0; }   // congela el marcador en el instante del toque
+  let ok=Math.abs(d.dodgePos-d.zoneC)<=d.zoneHalf;                    // respaldo por si no hay layout
+  const m=$('dodge-marker'), z=$('dodge-zone-el');
+  if(m&&z){ const mr=m.getBoundingClientRect(), zr=z.getBoundingClientRect(); const c=mr.left+mr.width/2; ok=(c>=zr.left && c<=zr.right); } // píxeles reales: lo que ves es lo que cuenta
+  resolveDodge(ok);
+}
 function resolveDodge(ok){
   const d=S.dg,e=d.enemy; if(!d||!e)return;
   if(d.dodgeRAF)cancelAnimationFrame(d.dodgeRAF); if(d.dodgeTO)clearTimeout(d.dodgeTO);
