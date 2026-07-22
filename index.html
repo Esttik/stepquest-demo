@@ -319,7 +319,7 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 @keyframes scfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 #cbt-player.lunge{animation:lunge .34s ease}
 @keyframes lunge{0%,100%{transform:translateX(0)}45%{transform:translateX(36px)}}
-#muteBtn{position:absolute;bottom:74px;left:12px;z-index:130;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.75);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#settingsBtn{position:absolute;bottom:74px;left:12px;z-index:130;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.75);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .popfx{position:absolute;font-family:'Orbitron',sans-serif;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.85);pointer-events:none;z-index:40}
 .coach{position:absolute;left:0;right:0;bottom:0;z-index:150;background:linear-gradient(180deg,rgba(11,17,34,.98),rgba(6,10,20,.99));border-top:2px solid var(--cyan-b);border-radius:20px 20px 32px 32px;padding:18px 18px 24px;transform:translateY(120%);transition:transform .35s cubic-bezier(.2,.9,.3,1);box-shadow:0 -14px 40px rgba(0,0,0,.6)}
 .coach.show{transform:none}
@@ -476,17 +476,15 @@ canvas.cv-pixel{image-rendering:pixelated}
           <div class="conv"><span style="color:var(--gold)">✦ <b id="home-gainxp">0</b> XP</span><span style="color:#ff4d6d">🔥 <b id="home-streak">1</b> días</span></div>
         </div>
         <div class="card dq">
-          <div class="h">◈ Meta diaria</div>
-          <div class="r"><span>Andar <b id="dq-goal">8.000</b> pasos</span><span class="pd" id="dq-steps">0 / 8.000</span></div>
-          <div class="mut" style="font-size:11px;margin-top:3px">Cúmplela para tu <b style="color:var(--gold)">cofre diario</b> y mantener la racha 🔥.</div>
+          <div class="row"><span class="h" style="margin:0">🎁 Meta diaria</span><span class="pd" id="dq-steps">0 / 8.000</span></div>
+          <div class="mut" style="font-size:10.5px;margin-top:1px"><span id="dq-goal">8.000</span> pasos · cofre + racha 🔥</div>
         </div>
         <div class="card" style="border-color:rgba(139,92,246,.4)">
-          <div class="row"><span class="h" style="margin:0">⚡ Energía</span><span class="mono" style="font-size:22px;color:var(--cyan-b);font-weight:800"><span id="home-saved">0</span></span></div>
-          <div class="mut" style="font-size:11.5px;margin-top:3px">Tus pasos sin gastar. Cada <b style="color:#a78bfa">100 = 1 avance</b> de tu Cazador (<b id="home-expname" style="color:#a78bfa">—</b>). Se acumula aunque cierres la app.</div>
+          <div class="row"><span class="h" style="margin:0">⚡ Energía</span><span class="mono" style="font-size:24px;color:var(--cyan-b);font-weight:800"><span id="home-saved">0</span></span></div>
+          <div class="mut" style="font-size:10.5px;margin-top:1px">pasos sin gastar · <span id="home-expname" style="color:#a78bfa">—</span></div>
         </div>
         <div class="card" onclick="go('retos')" style="cursor:pointer">
-          <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)" id="retos-sum"></span></div>
-          <div class="mut" style="font-size:11.5px;margin-top:3px">Misiones y <b style="color:var(--gold)">logros</b> · toca para ver ▸</div>
+          <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)"><span id="retos-sum"></span> ▸</span></div>
         </div>
         <div id="home-nudge" style="text-align:center;font-size:12.5px;color:var(--gold);margin:2px 0 8px;font-weight:600"></div>
         <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
@@ -641,7 +639,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     </div>
 
     <div class="flashfx" id="flashfx"></div>
-    <button id="muteBtn" onclick="toggleMute()">🔊</button>
+    <button id="settingsBtn" onclick="openSettings()">⚙️</button>
     <!-- toast + overlay live inside phone -->
     <div class="toast" id="toast"><div class="ico" id="toast-ico">⚔️</div><div class="rar" id="toast-rar">RARA</div><div class="nm" id="toast-nm">Objeto</div><div class="st" id="toast-st">+3 Fuerza</div></div>
     <div class="overlay" id="overlay">
@@ -677,6 +675,14 @@ canvas.cv-pixel{image-rendering:pixelated}
       <div class="mut" style="font-size:12px;margin-bottom:2px">¡Jefe derrotado! Elige un premio:</div>
       <div id="choice-cards" style="display:flex;flex-direction:column;gap:10px;width:100%;padding:0 4px;margin-top:4px"></div>
     </div>
+    <div class="overlay" id="settings-ov">
+      <div class="sys mono" style="color:var(--cyan-b);letter-spacing:3px;font-size:12px">◈ AJUSTES ◈</div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:0 8px;margin-top:10px">
+        <button class="btn ghost" style="width:100%" onclick="toggleMute()"><span id="set-sound">🔊 Sonido: ON</span></button>
+        <button class="btn ghost" style="width:100%" onclick="location.reload()">🔄 Reiniciar demo</button>
+      </div>
+      <button class="btn" style="width:70%;margin-top:12px" onclick="closeSettings()">CERRAR</button>
+    </div>
 
     <!-- bottom nav -->
     <div class="botnav" id="botnav" style="display:none">
@@ -702,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v13 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v14 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -756,7 +762,9 @@ function sfx(k){
     case 'hurt': beep(180,0.14,'square',0.13,110); break;
   }
 }
-function toggleMute(){ MUTE=!MUTE; const b=$('muteBtn'); if(b)b.textContent=MUTE?'🔇':'🔊'; if(!MUTE){const a=ac();if(a&&a.state==='suspended')a.resume();} }
+function toggleMute(){ MUTE=!MUTE; const s=$('set-sound'); if(s)s.textContent=MUTE?'🔇 Sonido: OFF':'🔊 Sonido: ON'; if(!MUTE){const a=ac();if(a&&a.state==='suspended')a.resume();} }
+function openSettings(){ const s=$('set-sound'); if(s)s.textContent=MUTE?'🔇 Sonido: OFF':'🔊 Sonido: ON'; $('settings-ov').classList.add('show'); }
+function closeSettings(){ $('settings-ov').classList.remove('show'); }
 function resumeAudio(){ const a=ac(); if(a&&a.state==='suspended')a.resume(); }
 document.addEventListener('pointerdown',resumeAudio);
 function shake(){ const p=document.querySelector('.screenwrap'); if(!p)return; p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake'); }
@@ -1033,7 +1041,7 @@ function showChoice(){
   sfx('win'); $('choice-ov').classList.add('show');
 }
 function pickChoice(i){ const c=CHOICE[i]; if(!c)return; c.act(); sfx('chest'); $('choice-ov').classList.remove('show'); renderHome();
-  flushLevel(()=>{ if(S.dg)S.dg=null; showToast('👑','LEG','¡Región completada!','Elegiste: '+c.t); go('mapa'); }); }
+  flushLevel(()=>{ if(S.dg){ S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); S.dg=null; } showToast('👑','LEG','¡Región completada!','Elegiste: '+c.t); go('mapa'); }); }
 function nextGoal(){
   if(!S.tutorialDone) return '';
   if(S.steps<S.stepGoal) return '🎯 Te faltan '+fmt(S.stepGoal-S.steps)+' pasos para el cofre diario';
@@ -1396,11 +1404,12 @@ function startDodge(){
   const d=S.dg,e=d.enemy; if(!d||!e)return;
   d.dodge=true; d.telegraph=true;
   const agi=totalStat('agilidad');
-  d.zoneHalf=Math.min(36, 14+agi*0.6);          // agilidad ensancha la zona segura
-  const span=Math.max(8, 100-2*d.zoneHalf-12);  // mantener la zona dentro de la barra
+  const diff=d.abyss?(d.floor||1):(d.r.minLv||1);   // dificultad escalonada por jefe/piso
+  d.zoneHalf=Math.min(34, 11+agi*0.55);             // agilidad ensancha la zona segura
+  const span=Math.max(8, 100-2*d.zoneHalf-12);      // mantener la zona dentro de la barra
   d.zoneC=d.zoneHalf+6+Math.random()*span;
   d.dodgeDir=1; d.dodgePos=Math.random()*100;
-  const spd=1.2*Math.max(0.5, 1.05-agi*0.014);  // velocidad base +20% (legible pero con tensión)
+  const spd=1.2*Math.max(0.5, 1.05-agi*0.014)*(1+Math.min(1.2, diff*0.04));  // +vel con la dificultad del jefe
   $('en-sprite').classList.add('charging'); sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
   renderCmd();
@@ -1427,7 +1436,7 @@ function resolveDodge(ok){
   d.dodge=false; d.telegraph=false; $('en-sprite').classList.remove('charging');
   if(ok){ const chip=Math.round(S.hpMax*0.03); S.hp=Math.max(1,S.hp-chip); sfx('crit'); heroLunge();
     $('dg-log').innerHTML='✨ <b style="color:var(--green)">¡ESQUIVADO!</b> Evitas el golpe definitivo.'; }
-  else { const dmg=Math.round(S.hpMax*0.5); S.hp-=dmg; sfx('boss'); shake(); flashFx();
+  else { const mit=Math.max(0.5, 1-totalStat('resistencia')*0.004); const dmg=Math.round(S.hpMax*0.5*mit); S.hp-=dmg; sfx('boss'); shake(); flashFx();
     $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' te acierta de lleno</b> · −'+dmg+'❤'; }
   renderCombat();
   if(S.hp<=0){ playerDown(); return; }
