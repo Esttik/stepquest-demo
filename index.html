@@ -194,14 +194,14 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .hero-fig .ov-pet{position:absolute;right:-6px;bottom:6px;font-size:27px;animation:bob .5s ease-in-out infinite}
 
 /* toast */
-.toast{position:absolute;left:12px;right:12px;top:14px;border-radius:14px;padding:12px 14px;z-index:125;
+.toast{position:absolute;left:40px;right:40px;top:12px;border-radius:11px;padding:8px 11px;z-index:125;
   border:1px solid var(--gold);background:linear-gradient(180deg,rgba(60,45,10,.95),rgba(30,22,5,.97));
   box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 24px rgba(245,196,81,.3);transform:translateY(-140%);transition:transform .35s;text-align:center}
 .toast.show{transform:none}
-.toast .ico{font-size:30px}
-.toast .rar{font-family:'Orbitron';font-size:10px;letter-spacing:2px;margin:3px 0}
-.toast .nm{font-weight:700;color:#fff;font-size:15px}
-.toast .st{color:var(--green);font-size:13px}
+.toast .ico{font-size:21px}
+.toast .rar{font-family:'Orbitron';font-size:8px;letter-spacing:1.5px;margin:1px 0}
+.toast .nm{font-weight:700;color:#fff;font-size:12.5px}
+.toast .st{color:var(--green);font-size:11px}
 
 /* levelup overlay */
 .overlay{position:absolute;inset:0;background:rgba(5,7,15,.9);z-index:30;display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:20px;border-radius:18px}
@@ -319,7 +319,7 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 @keyframes scfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 #cbt-player.lunge{animation:lunge .34s ease}
 @keyframes lunge{0%,100%{transform:translateX(0)}45%{transform:translateX(36px)}}
-#settingsBtn{position:absolute;bottom:74px;left:12px;z-index:130;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.75);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#settingsBtn{position:absolute;top:6px;left:10px;z-index:135;width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.8);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .popfx{position:absolute;font-family:'Orbitron',sans-serif;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.85);pointer-events:none;z-index:40}
 .coach{position:absolute;left:0;right:0;bottom:0;z-index:150;background:linear-gradient(180deg,rgba(11,17,34,.98),rgba(6,10,20,.99));border-top:2px solid var(--cyan-b);border-radius:20px 20px 32px 32px;padding:18px 18px 24px;transform:translateY(120%);transition:transform .35s cubic-bezier(.2,.9,.3,1);box-shadow:0 -14px 40px rgba(0,0,0,.6)}
 .coach.show{transform:none}
@@ -510,7 +510,7 @@ canvas.cv-pixel{image-rendering:pixelated}
           <div class="row" style="margin-bottom:6px"><span class="mono" style="font-size:10px;color:var(--muted)">AVANCE HACIA EL JEFE</span><span class="mono" style="font-size:11px;color:var(--cyan-b)" id="dg-progress">0 / 5</span></div>
           <div class="journey"><div class="jfill" id="dg-jfill" style="width:0%"></div><div class="jwalker" id="dg-jwalker">🚶</div><div class="jboss">👑</div></div>
           <div style="margin-top:10px">
-            <div class="row" style="margin-bottom:4px"><span class="mono" style="font-size:10px;color:var(--cyan)">👣 PRÓXIMO AVANCE</span><span class="mono" style="font-size:10px;color:var(--muted)"><span id="dg-stride">0</span> / 100 pasos</span></div>
+            <div class="row" style="margin-bottom:4px"><span class="mono" style="font-size:10px;color:var(--cyan)">👣 PRÓXIMO AVANCE</span><span class="mono" style="font-size:10px;color:var(--muted)"><span id="dg-stride">0</span> / <span id="dg-stridemax">100</span> pasos</span></div>
             <div style="height:9px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden"><i id="dg-stridebar" style="display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--cyan),var(--cyan-b));transition:width .3s"></i></div>
           </div>
           <div class="row" style="margin-top:8px"><span class="mono" style="font-size:10px;color:var(--green)">❤ <span id="dg-hp2">100/100</span></span><span class="mono" style="font-size:10px;color:var(--cyan-b)">🌙 <span id="dg-saved">0</span> guardados</span></div>
@@ -708,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v14 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v15 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1017,9 +1017,18 @@ function coachShow(msg,cta){ $('coach-msg').innerHTML=msg; $('coach-btn').textCo
 function coachHide(){ $('coach').classList.remove('show'); }
 function startTutorial(){ TUT=1; coachShow('👋 Bienvenido, Cazador. Lo que te hace fuerte aquí es <b>moverte</b>: cada <b>100 pasos reales = 1 avance</b> de tu héroe.','Ver cómo funciona ▶'); }
 function coachNext(){
-  if(TUT===1){ TUT=2; coachHide(); enterDungeon(REGIONS[0]); setTimeout(()=>coachShow('Te doy unos pasos de ejemplo. Mira cómo tu Cazador avanza y consigue botín 👇','Dar pasos de ejemplo'),450); }
-  else if(TUT===2){ TUT=3; coachHide(); simSteps(300); setTimeout(()=>coachShow('¡Eso es! En la app real lo mueven <b>tus pasos de verdad</b>, y sigue avanzando aunque cierres la app. 🚶','¡Entendido, a caminar!'),3500); }
-  else { TUT=0; S.tutorialDone=true; coachHide(); if(S.dg){ if(S.dg.timer)clearTimeout(S.dg.timer); S.dg=null; } go('home'); showToast('⚔️','RARA','¡Listo!','Tu aventura empieza con tus pasos'); }
+  TUT++;
+  switch(TUT){
+    case 2: coachHide(); enterDungeon(REGIONS[0]); setTimeout(()=>coachShow('Te doy unos pasos de ejemplo. Mira cómo tu Cazador avanza y consigue botín 👇','Dar pasos de ejemplo'),450); break;
+    case 3: coachHide(); simSteps(300); setTimeout(()=>coachShow('¡Eso es! En la app real lo mueven <b>tus pasos de verdad</b>, y sigue avanzando aunque cierres la app 🚶','Ver el juego ▶'),3500); break;
+    case 4: if(S.dg){ if(S.dg.timer)clearTimeout(S.dg.timer); S.dg=null; } go('home'); coachShow('🏠 <b>INICIO</b>: aquí ves tus pasos de hoy, tu <b>⚡ Energía</b> (pasos sin gastar) y tus retos.','Siguiente ▶'); break;
+    case 5: go('mapa'); coachShow('🗺️ <b>MAPA</b>: envías a tu Cazador a las mazmorras y al <b>Abismo infinito</b>. Cuanto más difícil la zona, más energía cuesta cada avance.','Siguiente ▶'); break;
+    case 6: go('mochila'); coachShow('🎒 <b>MOCHILA</b>: equipas el botín que consigues. El <b>"Poder"</b> te dice de un vistazo si un objeto mejora al que llevas.','Siguiente ▶'); break;
+    case 7: go('personaje'); coachShow('🛡️ <b>PERSONAJE</b>: tus estadísticas — <b>Fuerza</b>=daño, <b>Agilidad</b>=esquiva y crítico, <b>Vitalidad</b>=vida, <b>Resistencia</b>=defensa, <b>Suerte</b>=botín.','Siguiente ▶'); break;
+    case 8: go('arena'); coachShow('⚔️ <b>ARENA</b>: luchas contra la build de otros cazadores por trofeos (se desbloquea a nivel 5).','Siguiente ▶'); break;
+    case 9: go('tienda'); coachShow('🏪 <b>TIENDA</b>: compras, vendes y <b>mejoras</b> tu equipo en la Forja.','¡A jugar! 🚶'); break;
+    default: TUT=0; S.tutorialDone=true; coachHide(); go('home'); showToast('⚔️','RARA','¡Listo!','Camina para vivir tu aventura');
+  }
 }
 /* ---------- Tanda 4: agencia (cartas de recompensa + próximo objetivo + recoger) ---------- */
 let CHOICE=[];
@@ -1072,7 +1081,8 @@ function refreshUI(){
   else if(S.screen==='personaje') renderHero();
   else if(S.screen==='tienda') renderShop();
 }
-const STEP_STRIDE=100;   // 100 pasos = 1 avance
+const STEP_STRIDE=100;   // 100 pasos = 1 avance (base)
+function strideCost(d){ if(!d)return STEP_STRIDE; const diff=d.abyss?(d.floor||1):(d.r.minLv||1); return Math.round(STEP_STRIDE*(1+(diff-1)*0.35)); }  // mazmorra más difícil = más energía por avance
 function checkDailyGoal(){
   if(!S.goalDone && S.steps>=S.stepGoal){
     S.goalDone=true; S.streak=(S.streak||0)+1;
@@ -1197,9 +1207,11 @@ function updateExpUI(){
   const pct=Math.min(100,d.idx/d.total*100);
   $('dg-jfill').style.width=pct+'%';
   $('dg-jwalker').style.left='calc('+Math.min(90,pct)+'% - 4px)';
-  const within=Math.round((d.strideBuf||0)%STEP_STRIDE);
+  const cost=strideCost(d);
+  const within=Math.min(cost, Math.round(d.strideBuf||0));
   $('dg-stride').textContent=within;
-  $('dg-stridebar').style.width=within+'%';
+  const sm=$('dg-stridemax'); if(sm)sm.textContent=cost;
+  $('dg-stridebar').style.width=Math.min(100, within/cost*100)+'%';
   $('dg-hp2').textContent=Math.max(0,Math.round(S.hp))+'/'+S.hpMax;
   $('dg-saved').textContent=fmt(S.savedSteps||0);
   updateRageUI();
@@ -1220,9 +1232,10 @@ function runExpedition(){
   (function stepOne(){
     const d=S.dg; if(!d){return;}
     if(d.phase!=='auto'){ d.running=false; return; }
-    if((d.strideBuf||0)<STEP_STRIDE){ d.running=false; $('walk-scene').classList.remove('walking'); updateExpUI(); return; }
+    const cost=strideCost(d);
+    if((d.strideBuf||0)<cost){ d.running=false; $('walk-scene').classList.remove('walking'); updateExpUI(); return; }
     if(d.idx>=d.total){ d.running=false; $('walk-scene').classList.remove('walking'); startBoss(); return; }
-    d.strideBuf-=STEP_STRIDE; d.idx++;
+    d.strideBuf-=cost; d.idx++;
     roomEvent(); updateExpUI(); refreshCurr();
     if(!S.dg||S.dg.phase!=='auto'){ d.running=false; return; }
     d.timer=setTimeout(stepOne, S.dg.pauseNext||780);
@@ -1240,7 +1253,7 @@ function roomEvent(){
   S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.03));   // recupera algo entre salas
   if(roll<0.62){
     const mob=EXP_MOBS[Math.floor(Math.random()*EXP_MOBS.length)];
-    const raw=Math.round((chal*2.6+5)*(0.6+Math.random()*0.6));
+    const raw=Math.round((chal*3.3+6)*(0.6+Math.random()*0.6));
     const dmg=rage?Math.round(raw*0.35):Math.max(0,raw-Math.round(totalStat('resistencia')*0.6));
     S.hp-=dmg;
     if(S.hp<=0){ sfx('lose'); shake(); pushFeed('💀',null,'Te supera '+mob[0]+' '+mob[1],'Has caído en la expedición'); failExpedition(); return; }
@@ -1285,8 +1298,8 @@ function unleashRage(){
 }
 function startBoss(){
   const d=S.dg, lv=Math.max(d.r.minLv,S.level);
-  const hp=lv*30+d.r.minLv*20+120;
-  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*3+8,boss:true};
+  const hp=lv*38+d.r.minLv*24+140;
+  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*4+11,boss:true};
   d.turns=0; d.telegraph=false; d.dodge=false;
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
@@ -1405,11 +1418,11 @@ function startDodge(){
   d.dodge=true; d.telegraph=true;
   const agi=totalStat('agilidad');
   const diff=d.abyss?(d.floor||1):(d.r.minLv||1);   // dificultad escalonada por jefe/piso
-  d.zoneHalf=Math.min(34, 11+agi*0.55);             // agilidad ensancha la zona segura
+  d.zoneHalf=Math.min(24, 8+agi*0.30);              // zona más pequeña; la agilidad ayuda pero con tope bajo
   const span=Math.max(8, 100-2*d.zoneHalf-12);      // mantener la zona dentro de la barra
   d.zoneC=d.zoneHalf+6+Math.random()*span;
   d.dodgeDir=1; d.dodgePos=Math.random()*100;
-  const spd=1.2*Math.max(0.5, 1.05-agi*0.014)*(1+Math.min(1.2, diff*0.04));  // +vel con la dificultad del jefe
+  const spd=1.4*Math.max(0.55, 1.1-agi*0.011)*(1+Math.min(1.6, diff*0.06));  // base más rápida y sube fuerte con la dificultad
   $('en-sprite').classList.add('charging'); sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
   renderCmd();
@@ -1863,7 +1876,7 @@ function lpcDrawHero(){ const cv=$('hero-canvas'); if(!cv||!HERO_SHEET)return; d
 function lpcDrawAvatar(){ const pic=$('home-emoji'); if(!pic)return; if(!HERO_SHEET){pic.textContent=S.emoji;return;} let cv=pic.querySelector('canvas'); if(!cv){pic.textContent='';cv=document.createElement('canvas');cv.width=64;cv.height=64;cv.className='cv-pixel';cv.style.cssText='width:100%;height:100%;border-radius:50%';pic.appendChild(cv);} const ctx=cv.getContext('2d'); ctx.clearRect(0,0,64,64); ctx.imageSmoothingEnabled=false; ctx.drawImage(HERO_SHEET,17,132,30,30,2,4,60,60); }
 
 let _anim=0;
-function lpcAnimLoop(){ _anim+=0.16;
+function lpcAnimLoop(){ _anim+=0.085;
   const oc=$('ob-canvas'); if(oc && S.screen==='onboarding') drawFrame(oc.getContext('2d'),PREV_SHEET,WALKF[Math.floor(_anim)%WALKF.length],2);
   if(S.screen==='personaje') lpcDrawHero();
   const wc=$('walk-canvas'); if(wc && HERO_SHEET){ const sc=$('walk-scene'); const walking=sc&&sc.classList.contains('walking'); drawFrame(wc.getContext('2d'),HERO_SHEET, walking?WALKF[Math.floor(_anim)%WALKF.length]:0, 3); }
