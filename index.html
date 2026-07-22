@@ -326,6 +326,12 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .coach .cmsg{font-size:14.5px;color:#e8eefc;line-height:1.55;margin-bottom:13px}
 .coach .cmsg b{color:var(--cyan-b)}
 .coach .btn{width:100%}
+.choicecard{display:flex;align-items:center;gap:12px;padding:14px;border-radius:13px;border:1px solid var(--line);background:var(--card);cursor:pointer;transition:transform .1s;width:100%}
+.choicecard:active{transform:scale(.97)}
+.choicecard .ci{font-size:28px;width:44px;text-align:center;flex:none}
+.choicecard .ct{flex:1;text-align:left}
+.choicecard .cn{font-family:'Orbitron';font-weight:700;font-size:14.5px}
+.choicecard .cd{font-size:12px;color:var(--muted);margin-top:2px}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -477,6 +483,7 @@ canvas.cv-pixel{image-rendering:pixelated}
           <div class="row" style="margin-bottom:4px"><span class="h" style="margin:0">🎯 Misiones</span><span class="mono" style="font-size:10px;color:var(--muted)" id="mis-count"></span></div>
           <div id="missions"></div>
         </div>
+        <div id="home-nudge" style="text-align:center;font-size:12.5px;color:var(--gold);margin:2px 0 8px;font-weight:600"></div>
         <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
       </div>
 
@@ -650,6 +657,11 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button class="btn" id="af-btn" style="width:70%;margin-top:8px;display:none" onclick="closeArenaOv()">CONTINUAR</button>
     </div>
     <div class="coach" id="coach"><div class="cmsg" id="coach-msg"></div><button class="btn" id="coach-btn" onclick="coachNext()">Siguiente</button></div>
+    <div class="overlay" id="choice-ov">
+      <div class="sys mono" style="color:var(--gold);letter-spacing:3px;font-size:12px">◈ ELIGE TU RECOMPENSA ◈</div>
+      <div class="mut" style="font-size:12px;margin-bottom:2px">¡Jefe derrotado! Elige un premio:</div>
+      <div id="choice-cards" style="display:flex;flex-direction:column;gap:10px;width:100%;padding:0 4px;margin-top:4px"></div>
+    </div>
 
     <!-- bottom nav -->
     <div class="botnav" id="botnav" style="display:none">
@@ -675,7 +687,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v8 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v9 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -806,6 +818,7 @@ function renderHome(){
   const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓ cumplida';
   $('home-saved').textContent=fmt(S.savedSteps||0);
   const fr=frontierRegion(); $('home-expname').textContent=fr?fr.name:'Todo despejado ✓';
+  const ng=$('home-nudge'); if(ng)ng.textContent=nextGoal();
   renderMissions();
 }
 function frontierRegion(){ return REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]); }
@@ -957,6 +970,45 @@ function coachNext(){
   if(TUT===1){ TUT=2; coachHide(); enterDungeon(REGIONS[0]); setTimeout(()=>coachShow('Te doy unos pasos de ejemplo. Mira cómo tu Cazador avanza y consigue botín 👇','Dar pasos de ejemplo'),450); }
   else if(TUT===2){ TUT=3; coachHide(); simSteps(300); setTimeout(()=>coachShow('¡Eso es! En la app real lo mueven <b>tus pasos de verdad</b>, y sigue avanzando aunque cierres la app. 🚶','¡Entendido, a caminar!'),3500); }
   else { TUT=0; S.tutorialDone=true; coachHide(); if(S.dg){ if(S.dg.timer)clearTimeout(S.dg.timer); S.dg=null; } go('home'); showToast('⚔️','RARA','¡Listo!','Tu aventura empieza con tus pasos'); }
+}
+/* ---------- Tanda 4: agencia (cartas de recompensa + próximo objetivo + recoger) ---------- */
+let CHOICE=[];
+function showChoice(){
+  const bigxp=Math.max(40,Math.round(S.expMax*0.4));
+  const pool=[
+    {ico:'🪙',rar:'rara',t:'Bolsa de oro',d:'+300 🪙',act:()=>{S.gold+=300;}},
+    {ico:'💎',rar:'epica',t:'Cofre de gemas',d:'+10 💎',act:()=>{S.gems+=10;}},
+    {ico:'🌟',rar:'leg',t:'Botín legendario',d:'Objeto legendario garantizado',act:()=>{const it=makeItem(true); showToast(it.ico,'LEG',it.name,statText(it));}},
+    {ico:'✦',rar:'epica',t:'Gran experiencia',d:'+'+bigxp+' XP',act:()=>{gainXP(bigxp);}},
+    {ico:'⚒️',rar:'rara',t:'Oro para la forja',d:'+180 🪙',act:()=>{S.gold+=180;}}
+  ];
+  const idx=pool.map((_,i)=>i); for(let i=idx.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=idx[i];idx[i]=idx[j];idx[j]=t; }
+  CHOICE=idx.slice(0,3).map(i=>pool[i]);
+  const el=$('choice-cards'); el.innerHTML='';
+  CHOICE.forEach((c,i)=>{ const d=document.createElement('div'); d.className='choicecard b-'+c.rar;
+    d.innerHTML='<div class="ci rar-'+c.rar+'">'+c.ico+'</div><div class="ct"><div class="cn rar-'+c.rar+'">'+c.t+'</div><div class="cd">'+c.d+'</div></div>';
+    d.onclick=()=>pickChoice(i); el.appendChild(d); });
+  sfx('win'); $('choice-ov').classList.add('show');
+}
+function pickChoice(i){ const c=CHOICE[i]; if(!c)return; c.act(); sfx('chest'); $('choice-ov').classList.remove('show'); renderHome();
+  flushLevel(()=>{ if(S.dg)S.dg=null; showToast('👑','LEG','¡Región completada!','Elegiste: '+c.t); go('mapa'); }); }
+function nextGoal(){
+  if(!S.tutorialDone) return '';
+  if(S.steps<S.stepGoal) return '🎯 Te faltan '+fmt(S.stepGoal-S.steps)+' pasos para el cofre diario';
+  if(S.level<3) return '🎯 Sube a nivel 3 para desbloquear la Forja';
+  if(S.level<5) return '🎯 Sube a nivel 5 para desbloquear la Arena';
+  if(!S.cleared[0]) return '🎯 Derrota al 1er jefe para desbloquear el Abismo';
+  const fr=frontierRegion(); if(fr) return '🎯 Conquista '+fr.name;
+  return '🎯 Baja más hondo en el Abismo · récord: '+(S.abyss.best||0);
+}
+function spawnGrab(){
+  const host=$('walk-scene'); if(!host)return;
+  const g=document.createElement('button'); g.textContent='✋ ¡RECOGER!';
+  g.style.cssText='position:absolute;left:50%;top:54%;transform:translateX(-50%);z-index:50;padding:8px 15px;border:none;border-radius:20px;background:linear-gradient(90deg,#f5c451,#ffe08a);color:#2a1e00;font-family:Orbitron,sans-serif;font-weight:800;font-size:12px;cursor:pointer;box-shadow:0 0 18px rgba(245,196,81,.7);animation:ragepulse .8s infinite';
+  let taken=false;
+  g.onclick=()=>{ if(taken)return; taken=true; const bonus=60+Math.floor(Math.random()*60); S.gold+=bonus; sfx('coin'); coinFly(); popFx('+'+bonus+' 🪙 ¡bonus!','#f5c451',18,46); refreshCurr(); g.remove(); };
+  host.appendChild(g);
+  setTimeout(()=>{ if(g.parentNode)g.remove(); },1700);
 }
 function gainXP(amount){
   S.exp+=amount;
@@ -1127,7 +1179,7 @@ function runExpedition(){
   })();
 }
 function lootFx(it){
-  if(it.rar==='leg'){ flashFx(); shake(); sfx('legend'); popFx('¡LEGENDARIO!','#f5c451',24,28); if(S.dg)S.dg.pauseNext=1600; }
+  if(it.rar==='leg'){ flashFx(); shake(); sfx('legend'); popFx('¡LEGENDARIO!','#f5c451',24,28); if(S.dg)S.dg.pauseNext=1600; spawnGrab(); }
   else if(it.rar==='epica'){ sfx('chest'); popFx('¡Épico!','#a78bfa',20,30); if(S.dg)S.dg.pauseNext=1100; }
   else { sfx('coin'); if(S.dg)S.dg.pauseNext=750; }
 }
@@ -1375,6 +1427,7 @@ function enemyDown(){
   const xp=wasBoss?d.r.minLv*30+40:d.r.minLv*8+10;
   const gold=wasBoss?150:12+Math.floor(Math.random()*16);
   S.gold+=gold; gainXP(xp); S.m.gold+=gold; if(wasBoss)S.m.boss++;
+  if(wasBoss && !d.abyss){ showChoice(); return; }
   showReward(rollReward(wasBoss,xp,gold),wasBoss);
 }
 function rollReward(boss,xp,gold){
