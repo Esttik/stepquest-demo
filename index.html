@@ -467,6 +467,12 @@ canvas.cv-pixel{image-rendering:pixelated}
       <div class="screen" id="s-mapa">
         <div class="row"><div class="sec-title">🗺️ Mapa del mundo</div><span class="mono" style="font-size:11px;color:var(--cyan-b)">🌙<span id="map-en">0</span></span></div>
         <div class="mut">Toca una región desbloqueada para enviar a tu Cazador. Avanza con tus pasos.</div>
+        <div class="region cur" onclick="enterAbyss()" style="border-color:#8b5cf6;background:rgba(139,92,246,.07);margin-top:8px">
+          <div class="ico" style="border-color:#8b5cf6;color:#8b5cf6;background:#8b5cf622">🕳️</div>
+          <div class="info"><div class="n">Abismo Infinito</div><div class="s">Pisos sin fin · dificultad y botín crecientes · récord: <b id="abyss-best" style="color:#a78bfa">0</b></div></div>
+          <div class="rk" style="color:#8b5cf6">∞</div>
+        </div>
+        <div class="sec-title" style="font-size:13px;margin-top:12px">Regiones</div>
         <div id="regions" style="display:flex;flex-direction:column;gap:14px;margin-top:6px"></div>
       </div>
 
@@ -649,7 +655,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v4 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v5 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -669,6 +675,7 @@ const S = {
   cleared:{}, shopMode:'buy',
   m:{kills:0,loot:0,boss:0,gold:0}, mClaimed:{},
   arena:{trophies:0,wins:0,losses:0,opps:null,board:null},
+  abyss:{best:0},
   dg:null
 };
 const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
@@ -898,6 +905,7 @@ const REGIONS=[
 ];
 function renderMap(){
   $('map-en').textContent=fmt(S.savedSteps||0);
+  const ab=$('abyss-best'); if(ab)ab.textContent=S.abyss.best||0;
   const el=$('regions'); el.innerHTML='';
   const frontier=REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]);
   REGIONS.forEach(r=>{
@@ -940,6 +948,46 @@ function enterDungeon(r){
   } else {
     $('walk-log').innerHTML='Tu Cazador entra en <b>'+r.name+'</b>. ¡Camina para avanzar!';
   }
+}
+/* ---------- Abismo Infinito (modo sin fin que escala) ---------- */
+const ABYSS_COLORS=['#8b5cf6','#3fb4ff','#ff4d6d','#38e5a0','#f5c451'];
+function abyssRegion(floor){
+  return {id:'abyss', name:'Abismo', ico:'🕳️', minLv:S.level+Math.floor(floor*1.6),
+    rooms:3, color:ABYSS_COLORS[floor%ABYSS_COLORS.length], boss:'Guardián del Abismo', bemo:'👹'};
+}
+function enterAbyss(){
+  const floor=1;
+  S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
+  const r=abyssRegion(floor);
+  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0,abyss:true,floor:floor};
+  if((S.abyss.best||0)<1) S.abyss.best=0;
+  $('dg-title').textContent='Abismo · Piso '+floor;
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').classList.remove('rage'); $('exp-feed').innerHTML='';
+  go('dungeon'); showWalk(); updateExpUI(); updateRageUI();
+  const saved=S.savedSteps||0;
+  if(saved>0){ S.savedSteps=0; S.dg.strideBuf+=saved; $('walk-log').innerHTML='🌙 Aplicando <b>'+fmt(saved)+'</b> pasos guardados al Abismo…'; setTimeout(()=>runExpedition(),500); }
+  else { $('walk-log').innerHTML='Desciendes al <b>Abismo</b>. Cuanto más hondo llegues, mejor botín… y más peligro. ¡Camina!'; }
+}
+function nextAbyssFloor(){
+  const d=S.dg; if(!d)return;
+  d.floor++; if(d.floor>(S.abyss.best||0)) S.abyss.best=d.floor;
+  const r=abyssRegion(d.floor);
+  d.r=r; d.idx=0; d.total=r.rooms; d.phase='auto'; d.enemy=null; d.turns=0; d.telegraph=false;
+  $('dg-arena').classList.remove('boss'); $('en-sprite').classList.remove('charging');
+  $('dg-title').textContent='Abismo · Piso '+d.floor;
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  showWalk(); $('walk-log').innerHTML='⬇️ <b>Piso '+d.floor+'</b>. Más profundo, más botín.';
+  updateExpUI();
+  showToast('🕳️','LEG','¡Piso '+d.floor+'!','Sigues descendiendo · récord '+S.abyss.best);
+  runExpedition();
+}
+function endAbyss(){
+  const d=S.dg; if(!d)return; const reached=d.floor;
+  d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
+  $('walk-scene').classList.remove('walking','rage'); $('en-sprite').classList.remove('charging');
+  if(reached>(S.abyss.best||0)) S.abyss.best=reached;
+  setTimeout(()=>{ S.hp=S.hpMax; showToast('🕳️','EPICA','Abismo: llegaste al piso '+reached,'Récord: '+(S.abyss.best||reached)); S.dg=null; go('mapa'); },1300);
 }
 function showWalk(){ $('walk-panel').style.display='block'; $('combat-panel').style.display='none'; }
 function showCombat(){ $('walk-panel').style.display='none'; $('combat-panel').style.display='block'; }
@@ -1005,7 +1053,9 @@ function roomEvent(){
   updateRageUI();
 }
 function failExpedition(){
-  const d=S.dg; if(!d)return; d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
+  const d=S.dg; if(!d)return;
+  if(d.abyss){ endAbyss(); return; }
+  d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
   $('walk-scene').classList.remove('walking','rage'); updateExpUI();
   setTimeout(()=>{ S.hp=S.hpMax; showToast('💀','RARA','Expedición fallida','Te retiras malherido. Sube tu poder y vuelve.'); S.dg=null; go('mapa'); },1300);
 }
@@ -1152,6 +1202,7 @@ function cmdDefend(){
     $('dg-log').innerHTML='🛡️ Te cubres y recuperas · +'+heal+'❤'; renderCombat(); setTimeout(enemyStrike,520); }
 }
 function playerDown(){
+  if(S.dg && S.dg.abyss){ S.dg.phase='down'; $('dg-log').innerHTML='💀 El Guardián del Abismo te derrota...'; setTimeout(endAbyss,900); return; }
   S.dg.phase='down';
   $('dg-log').innerHTML='💀 Has caído... El Sistema te retira con vida.';
   setTimeout(()=>{ S.hp=S.hpMax; $('dg-arena').classList.remove('boss'); S.dg.phase='auto'; showWalk();
@@ -1216,7 +1267,10 @@ function rewardContinue(){
   const wasBoss=$('reward-ov').dataset.boss==='1';
   renderHome();
   flushLevel(()=>{
-    if(wasBoss){ S.dg=null; showToast('👑','LEG','¡Región completada!','Vuelves al mapa con el botín'); go('mapa'); }
+    if(wasBoss){
+      if(S.dg && S.dg.abyss){ nextAbyssFloor(); }
+      else { S.dg=null; showToast('👑','LEG','¡Región completada!','Vuelves al mapa con el botín'); go('mapa'); }
+    }
     else if(S.dg){ S.dg.phase='auto'; showWalk(); }
   });
 }
