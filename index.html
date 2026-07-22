@@ -675,7 +675,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v7 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v8 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -753,7 +753,7 @@ function coinFly(){
   setTimeout(()=>c.remove(),620);
 }
 function heroLunge(){ const c=$('cbt-player'); if(!c)return; c.classList.remove('lunge'); void c.offsetWidth; c.classList.add('lunge'); }
-function totalStat(k){let v=S.stats[k]||0;for(const s of Object.values(S.equipped)){if(s&&s[k])v+=s[k];}return v;}
+function totalStat(k){let v=S.stats[k]||0;for(const s of Object.values(S.equipped)){if(s&&s[k])v+=s[k];}if(typeof setBonuses==='function'){v+=setBonuses()[k]||0;}return v;}
 
 /* ---------- onboarding ---------- */
 document.querySelectorAll('#classpick .c').forEach(c=>c.onclick=()=>{
@@ -1337,12 +1337,33 @@ const LOOT=[
   {name:'Anillo de Poder',ico:'💍',slot:'anillo',fuerza:6},
   {name:'Anillo de Suerte',ico:'💍',slot:'anillo',suerte:7}
 ];
+/* conjuntos (sets): bonus por llevar varias piezas */
+const SETS={
+  'Monarca':{label:'del Monarca', tiers:[{n:2,b:{fuerza:4,suerte:4}},{n:3,b:{fuerza:8,suerte:6,vitalidad:6}}]},
+  'Sombra':{label:'de las Sombras', tiers:[{n:2,b:{agilidad:5,resistencia:4}},{n:3,b:{agilidad:9,resistencia:7,fuerza:5}}]}
+};
+const SET_OF={'Espada del Monarca':'Monarca','Amuleto del Monarca':'Monarca','Corona Rúnica':'Monarca','Armadura de Sombras':'Sombra','Daga Gemela':'Sombra','Guantes Ágiles':'Sombra'};
+function setBonuses(){
+  const counts={};
+  for(const s of Object.values(S.equipped)){ if(s&&s.set)counts[s.set]=(counts[s.set]||0)+1; }
+  const bon={};
+  for(const nm in counts){ const set=SETS[nm]; if(!set)continue; set.tiers.forEach(t=>{ if(counts[nm]>=t.n) for(const k in t.b) bon[k]=(bon[k]||0)+t.b[k]; }); }
+  return bon;
+}
+function activeSets(){
+  const counts={}; for(const s of Object.values(S.equipped)){ if(s&&s.set)counts[s.set]=(counts[s.set]||0)+1; }
+  return Object.keys(counts).filter(nm=>counts[nm]>=2).map(nm=>({nm,label:SETS[nm].label,c:counts[nm]}));
+}
+const AFFIXK=['fuerza','agilidad','resistencia','vitalidad','suerte'];
 function makeItem(good){
   const base=LOOT[Math.floor(Math.random()*LOOT.length)];
   const rar=good?(Math.random()>.5?'leg':'epica'):(Math.random()>.5?'rara':'comun');
   const mult=({comun:.6,rara:1,epica:1.5,leg:2.2})[rar];
   const it={name:base.name,ico:base.ico,slot:base.slot,rar};
-  ['fuerza','agilidad','resistencia','vitalidad','suerte'].forEach(k=>{ if(base[k]) it[k]=Math.max(1,Math.round(base[k]*mult)); });
+  AFFIXK.forEach(k=>{ if(base[k]) it[k]=Math.max(1,Math.round(base[k]*mult)); });
+  const naff={comun:0,rara:1,epica:2,leg:3}[rar]||0;   // afijos: variedad de tirada por rareza
+  for(let i=0;i<naff;i++){ const k=AFFIXK[Math.floor(Math.random()*AFFIXK.length)]; it[k]=(it[k]||0)+(1+Math.floor(Math.random()*Math.max(1,Math.round(2*mult)))); }
+  if(SET_OF[base.name]) it.set=SET_OF[base.name];
   if(it.slot)S.inventory.push(it);
   return it;
 }
@@ -1426,6 +1447,9 @@ const SLOTS=[
 const SLOTNAME={yelmo:'Yelmo',pechera:'Pechera',guantes:'Guantes',botas:'Botas',amuleto:'Amuleto',arma:'Arma',escudo:'Escudo',anillo:'Anillo'};
 function renderInv(){
   const eq=$('equipped'); eq.innerHTML='';
+  const sets=activeSets();
+  let ss=$('setsummary'); if(!ss){ ss=document.createElement('div'); ss.id='setsummary'; eq.parentNode.insertBefore(ss,eq); }
+  ss.innerHTML = sets.length ? ('<div class="card" style="border-color:rgba(167,139,250,.45);margin-bottom:10px"><div class="h" style="margin:0">◈ Conjuntos activos</div>'+sets.map(s=>'<div class="mut" style="font-size:12px;margin-top:4px"><b style="color:#a78bfa">'+s.label+'</b> · '+s.c+' piezas → <span style="color:var(--green)">'+setBonusText(s.nm)+'</span></div>').join('')+'</div>') : '';
   SLOTS.forEach(sl=>{ const it=S.equipped[sl.id];
     const c=document.createElement('div');
     c.className='eqcard'+(it?(' b-'+it.rar):' empty');
@@ -1447,7 +1471,13 @@ function renderInv(){
     items.forEach(it=>{ const row=itemRow(it,false,it.slot,true); row.onclick=()=>equip(it); inv.appendChild(row); });
   });
 }
-function itemName(it){ return it.name + (it.plus?' <span style="color:var(--gold)">+'+it.plus+'</span>':''); }
+function itemName(it){ return it.name + (it.plus?' <span style="color:var(--gold)">+'+it.plus+'</span>':'') + (it.set&&SETS[it.set]?' <span style="color:#a78bfa;font-size:.82em">◈'+SETS[it.set].label+'</span>':''); }
+function setBonusText(nm){
+  const set=SETS[nm]; if(!set)return '—';
+  const c=(activeSets().find(x=>x.nm===nm)||{}).c||0; const bon={};
+  set.tiers.forEach(t=>{ if(c>=t.n) for(const k in t.b) bon[k]=(bon[k]||0)+t.b[k]; });
+  return Object.keys(bon).map(k=>'+'+bon[k]+' '+STSHORT[k]).join(' · ')||'—';
+}
 const STSHORT={fuerza:'Fue',agilidad:'Agi',resistencia:'Res',vitalidad:'Vit',suerte:'Sue'};
 function compareChips(it){
   const cur=S.equipped[it.slot];
