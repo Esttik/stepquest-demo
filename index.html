@@ -309,6 +309,18 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .ar-vs{font-family:'Orbitron';font-weight:800;color:var(--muted);font-size:13px}
 .enemy-sprite.charging{animation:charge .5s ease-in-out infinite;filter:drop-shadow(0 0 22px rgba(255,120,40,.95))!important}
 @keyframes charge{0%,100%{transform:scaleX(-1) scale(1)}50%{transform:scaleX(-1) scale(1.14)}}
+/* ---------- JUICE / GAME FEEL ---------- */
+@keyframes shk{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,2px)}40%{transform:translate(5px,-2px)}60%{transform:translate(-4px,-1px)}80%{transform:translate(4px,1px)}}
+.screenwrap.shake{animation:shk .3s}
+.flashfx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:120;border-radius:32px}
+.flashfx.go{animation:flsh .2s ease-out}
+@keyframes flsh{0%{opacity:.5}100%{opacity:0}}
+.screen.active{animation:scfade .26s ease}
+@keyframes scfade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+#cbt-player.lunge{animation:lunge .34s ease}
+@keyframes lunge{0%,100%{transform:translateX(0)}45%{transform:translateX(36px)}}
+#muteBtn{position:absolute;bottom:74px;left:12px;z-index:130;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.75);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.popfx{position:absolute;font-family:'Orbitron',sans-serif;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.85);pointer-events:none;z-index:40}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -601,6 +613,8 @@ canvas.cv-pixel{image-rendering:pixelated}
 
     </div>
 
+    <div class="flashfx" id="flashfx"></div>
+    <button id="muteBtn" onclick="toggleMute()">🔊</button>
     <!-- toast + overlay live inside phone -->
     <div class="toast" id="toast"><div class="ico" id="toast-ico">⚔️</div><div class="rar" id="toast-rar">RARA</div><div class="nm" id="toast-nm">Objeto</div><div class="st" id="toast-st">+3 Fuerza</div></div>
     <div class="overlay" id="overlay">
@@ -655,7 +669,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v5 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v6 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -682,6 +696,56 @@ const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
 function rank(){let r='E';for(const[l,x]of RANKS){if(S.level>=l)r=x;}return r;}
 const $=id=>document.getElementById(id);
 function toggleDemo(){ document.querySelector('.demopanel').classList.toggle('open'); }
+/* ---------- sonido (WebAudio, sin archivos) + juice ---------- */
+let AC=null, MUTE=false;
+function ac(){ if(!AC){ try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){} } return AC; }
+function beep(freq,dur,type,vol,slideTo){
+  if(MUTE)return; const a=ac(); if(!a)return;
+  try{ const o=a.createOscillator(), g=a.createGain();
+    o.type=type||'square'; o.frequency.setValueAtTime(freq,a.currentTime);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+    g.gain.setValueAtTime(vol||0.14, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime+dur);
+    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime+dur);
+  }catch(e){}
+}
+function sfx(k){
+  switch(k){
+    case 'hit': beep(230,0.08,'square',0.11,150); break;
+    case 'crit': beep(520,0.13,'sawtooth',0.16,180); break;
+    case 'coin': beep(880,0.08,'sine',0.11,1300); break;
+    case 'chest': [660,880,1170].forEach((f,i)=>setTimeout(()=>beep(f,0.1,'triangle',0.12),i*70)); break;
+    case 'level': [523,659,784,1046].forEach((f,i)=>setTimeout(()=>beep(f,0.14,'triangle',0.14),i*90)); break;
+    case 'legend': [784,1046,1318,1568].forEach((f,i)=>setTimeout(()=>beep(f,0.16,'sine',0.16),i*95)); break;
+    case 'boss': beep(95,0.35,'sawtooth',0.2,55); break;
+    case 'win': [659,988,1318].forEach((f,i)=>setTimeout(()=>beep(f,0.16,'triangle',0.15),i*100)); break;
+    case 'lose': beep(320,0.45,'sawtooth',0.15,70); break;
+    case 'hurt': beep(180,0.14,'square',0.13,110); break;
+  }
+}
+function toggleMute(){ MUTE=!MUTE; const b=$('muteBtn'); if(b)b.textContent=MUTE?'🔇':'🔊'; if(!MUTE){const a=ac();if(a&&a.state==='suspended')a.resume();} }
+function resumeAudio(){ const a=ac(); if(a&&a.state==='suspended')a.resume(); }
+document.addEventListener('pointerdown',resumeAudio);
+function shake(){ const p=document.querySelector('.screenwrap'); if(!p)return; p.classList.remove('shake'); void p.offsetWidth; p.classList.add('shake'); }
+function flashFx(){ const f=$('flashfx'); if(!f)return; f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function popFx(txt,color,size,topPct){
+  const host=(S.screen==='dungeon'?$('walk-scene'):null)||document.querySelector('.phone'); if(!host)return;
+  const e=document.createElement('div'); e.className='popfx'; e.textContent=txt;
+  e.style.left='50%'; e.style.top=(topPct||38)+'%'; e.style.fontSize=(size||18)+'px'; e.style.color=color||'#fff';
+  host.appendChild(e);
+  try{ e.animate([{opacity:0,transform:'translate(-50%,8px)'},{opacity:1,transform:'translate(-50%,-4px)'},{opacity:0,transform:'translate(-50%,-34px)'}],{duration:1100,easing:'ease-out'}); }catch(x){}
+  setTimeout(()=>e.remove(),1150);
+}
+function coinFly(){
+  const target=$('c-gold'), host=document.querySelector('.phone'); if(!target||!host)return;
+  const tr=target.getBoundingClientRect(), hr=host.getBoundingClientRect();
+  const sx=hr.width*0.5, sy=hr.height*0.42, dx=(tr.left-hr.left)-sx, dy=(tr.top-hr.top)-sy;
+  const c=document.createElement('div'); c.textContent='🪙';
+  c.style.cssText='position:absolute;left:'+sx+'px;top:'+sy+'px;font-size:17px;z-index:45;pointer-events:none';
+  host.appendChild(c);
+  try{ c.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:'translate('+dx+'px,'+dy+'px) scale(.5)',opacity:.85}],{duration:600,easing:'ease-in'}); }catch(x){}
+  setTimeout(()=>c.remove(),620);
+}
+function heroLunge(){ const c=$('cbt-player'); if(!c)return; c.classList.remove('lunge'); void c.offsetWidth; c.classList.add('lunge'); }
 function totalStat(k){let v=S.stats[k]||0;for(const s of Object.values(S.equipped)){if(s&&s[k])v+=s[k];}return v;}
 
 /* ---------- onboarding ---------- */
@@ -695,6 +759,7 @@ document.querySelectorAll('#stepgoals .opt').forEach(o=>o.onclick=()=>{
 document.querySelectorAll('#traingoals .opt').forEach(o=>o.onclick=()=>{
   document.querySelectorAll('#traingoals .opt').forEach(x=>x.classList.remove('sel'));o.classList.add('sel');S.trainGoal=+o.dataset.t;});
 async function finishOnboarding(){
+  resumeAudio(); sfx('level');
   const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='⚙ FORJANDO CAZADOR…';}
   await lpcBuildHero();
   $('botnav').style.display='flex'; go('home');
@@ -767,6 +832,7 @@ function claimMission(id){
   const m=MISSIONS.find(x=>x.id===id); if(!m||S.mClaimed[id]||m.get()<m.target)return;
   S.mClaimed[id]=true;
   if(m.reward.gold)S.gold+=m.reward.gold; if(m.reward.gems)S.gems+=m.reward.gems;
+  sfx('chest');
   showToast('🎯','LEG','¡Misión cumplida!',m.name+' · '+((m.reward.gold?'+'+m.reward.gold+' 🪙 ':'')+(m.reward.gems?'+'+m.reward.gems+' 💎':'')));
   renderHome();
 }
@@ -852,8 +918,10 @@ function finishArena(me,opp,res){
     S.gold+=gold; S.gems+=gems; S.m.gold+=gold;
     $('af-result').style.color='var(--green)'; $('af-result').textContent='¡VICTORIA!';
     $('af-log').innerHTML='+'+dt+' 🏆 · +'+gold+' 🪙'+(gems?' · +'+gems+' 💎':'');
+    sfx('win'); flashFx();
     showToast('🏆','LEG','¡Victoria en la Arena!','+'+dt+' trofeos');
   } else { dt=Math.min(S.arena.trophies,10+Math.floor(Math.random()*10)); S.arena.trophies-=dt; S.arena.losses++;
+    sfx('lose');
     $('af-result').style.color='var(--red)'; $('af-result').textContent='DERROTA';
     $('af-log').innerHTML='−'+dt+' 🏆 · Sube tu poder ('+heroPower()+') y vuelve';
   }
@@ -878,6 +946,7 @@ function checkDailyGoal(){
   if(!S.goalDone && S.steps>=S.stepGoal){
     S.goalDone=true; S.streak=(S.streak||0)+1;
     const g=6+Math.floor(Math.random()*6); S.gems+=g; S.gold+=120;
+    sfx('chest');
     showToast('🎁','LEG','¡Meta diaria cumplida!','+120 🪙 · +'+g+' 💎 · racha 🔥 '+S.streak);
   }
 }
@@ -1024,29 +1093,38 @@ function runExpedition(){
     if(d.idx>=d.total){ d.running=false; $('walk-scene').classList.remove('walking'); startBoss(); return; }
     d.strideBuf-=STEP_STRIDE; d.idx++;
     roomEvent(); updateExpUI(); refreshCurr();
-    d.timer=setTimeout(stepOne,700);
+    if(!S.dg||S.dg.phase!=='auto'){ d.running=false; return; }
+    d.timer=setTimeout(stepOne, S.dg.pauseNext||780);
   })();
+}
+function lootFx(it){
+  if(it.rar==='leg'){ flashFx(); shake(); sfx('legend'); popFx('¡LEGENDARIO!','#f5c451',24,28); if(S.dg)S.dg.pauseNext=1600; }
+  else if(it.rar==='epica'){ sfx('chest'); popFx('¡Épico!','#a78bfa',20,30); if(S.dg)S.dg.pauseNext=1100; }
+  else { sfx('coin'); if(S.dg)S.dg.pauseNext=750; }
 }
 function roomEvent(){
   const d=S.dg, base=d.r.minLv, chal=Math.max(base,S.level), roll=Math.random();
   const rage=(d.rageActive>0), mult=rage?2:1, tag=rage?'🔥 ':'';
+  d.pauseNext=0;
   S.hp=Math.min(S.hpMax,S.hp+Math.round(S.hpMax*0.03));   // recupera algo entre salas
   if(roll<0.62){
     const mob=EXP_MOBS[Math.floor(Math.random()*EXP_MOBS.length)];
     const raw=Math.round((chal*2.6+5)*(0.6+Math.random()*0.6));
     const dmg=rage?Math.round(raw*0.35):Math.max(0,raw-Math.round(totalStat('resistencia')*0.6));
     S.hp-=dmg;
-    if(S.hp<=0){ pushFeed('💀',null,'Te supera '+mob[0]+' '+mob[1],'Has caído en la expedición'); failExpedition(); return; }
+    if(S.hp<=0){ sfx('lose'); shake(); pushFeed('💀',null,'Te supera '+mob[0]+' '+mob[1],'Has caído en la expedición'); failExpedition(); return; }
     const xp=(base*7+8)*mult, gold=(8+Math.floor(Math.random()*12)+base)*mult;
     S.gold+=gold; gainXP(xp); S.m.kills++; S.m.gold+=gold;
+    sfx('hit'); popFx('+'+gold+' 🪙','#f5c451',18); coinFly();
     pushFeed('⚔️',null,tag+'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
-    if(Math.random()<(rage?0.4:0.13)+totalStat('suerte')*0.004){ const it=makeItem(rage||Math.random()<0.22); pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); S.m.loot++; }
+    if(Math.random()<(rage?0.4:0.13)+totalStat('suerte')*0.004){ const it=makeItem(rage||Math.random()<0.22); S.m.loot++; pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); lootFx(it); }
   } else if(roll<0.82){
     const gold=(14+Math.floor(Math.random()*20)+base*2)*mult; S.gold+=gold; S.m.gold+=gold;
+    sfx('coin'); popFx('+'+gold+' 🪙','#f5c451',20); coinFly();
     pushFeed('💰',null,tag+'Tesoro encontrado','+'+gold+' 🪙');
   } else {
-    if(Math.random()<0.65){ const it=makeItem(rage||Math.random()<0.28); pushFeed(it.ico,it.rar,tag+'Cofre: '+it.name,statText(it)); S.m.loot++; }
-    else { const g=(1+Math.floor(Math.random()*3))*mult; S.gems+=g; pushFeed('🎁','epica',tag+'Cofre de gemas','+'+g+' 💎'); }
+    if(Math.random()<0.65){ const it=makeItem(rage||Math.random()<0.28); S.m.loot++; pushFeed(it.ico,it.rar,tag+'Cofre: '+it.name,statText(it)); lootFx(it); }
+    else { const g=(1+Math.floor(Math.random()*3))*mult; S.gems+=g; sfx('chest'); popFx('+'+g+' 💎','#a78bfa',20); pushFeed('🎁','epica',tag+'Cofre de gemas','+'+g+' 💎'); d.pauseNext=900; }
   }
   if(d.rageActive>0){ d.rageActive--; if(d.rageActive===0)$('walk-scene').classList.remove('rage'); }
   else { d.rage=Math.min(100,(d.rage||0)+22); }
@@ -1082,6 +1160,7 @@ function startBoss(){
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
   $('en-sprite').textContent=d.enemy.emo; $('en-sprite').classList.remove('charging');
+  sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b>'+d.enemy.name+'</b> te cierra el paso. Vigila su <b style="color:#ffb648">golpe brutal</b> y usa 🛡️ Defender a tiempo.';
   showCombat(); renderCombat(); updateExpUI();
 }
@@ -1143,7 +1222,7 @@ function doDamage(mult,label){
   const critChance=totalStat('agilidad')*0.9+totalStat('suerte')*0.6;
   const crit=Math.random()*100<critChance;
   const dmg=Math.round((totalStat('fuerza')*2+6)*mult*(crit?1.9:1)*(0.85+Math.random()*0.3));
-  e.hp-=dmg; floatDmg(dmg,crit);
+  e.hp-=dmg; floatDmg(dmg,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+dmg+'</b>'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
   if(e.hp<=0){ setTimeout(enemyDown,450); } else { setTimeout(enemyStrike,560); }
@@ -1153,7 +1232,7 @@ function doDamageMulti(mult,hits,label){
   let total=0,crit=false;
   for(let k=0;k<hits;k++){ const c=Math.random()*100<(totalStat('agilidad')*0.9+totalStat('suerte')*0.6); if(c)crit=true;
     total+=Math.round((totalStat('fuerza')*2+6)*mult*(c?1.9:1)*(0.85+Math.random()*0.3)); }
-  e.hp-=total; floatDmg(total,crit);
+  e.hp-=total; floatDmg(total,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+total+'</b> ('+hits+' golpes)'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
   if(e.hp<=0){ setTimeout(enemyDown,450); } else { setTimeout(enemyStrike,560); }
@@ -1184,11 +1263,12 @@ function enemyStrike(){
   if(d.telegraph){ // no defendió a tiempo -> golpe brutal
     d.telegraph=false; $('en-sprite').classList.remove('charging');
     const dmg=Math.round(S.hpMax*0.4);
-    S.hp-=dmg; $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' descarga el golpe brutal</b> · −'+dmg+'❤';
+    S.hp-=dmg; sfx('boss'); shake(); flashFx();
+    $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' descarga el golpe brutal</b> · −'+dmg+'❤';
     renderCombat(); if(S.hp<=0){playerDown();return;} renderCmd(); return;
   }
   const dmg=Math.max(1,Math.round(e.atk*(0.8+Math.random()*0.4)-totalStat('resistencia')*0.7));
-  S.hp-=dmg; renderCombat();
+  S.hp-=dmg; renderCombat(); sfx('hurt');
   if(S.hp<=0){playerDown();return;}
   if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ d.telegraph=true; $('en-sprite').classList.add('charging');
     $('dg-log').innerHTML='⚠️ <b style="color:#ffb648">¡'+e.name+' prepara un GOLPE BRUTAL! Usa 🛡️ Defender.</b>'; renderCmd(); } }
@@ -1239,6 +1319,7 @@ function makeItem(good){
 }
 function enemyDown(){
   const d=S.dg, wasBoss=d.enemy.boss;
+  sfx('win');
   if(wasBoss) S.cleared[d.r.id]=true;
   d.phase='reward';
   const xp=wasBoss?d.r.minLv*30+40:d.r.minLv*8+10;
@@ -1260,6 +1341,7 @@ function showReward(rw,boss){
   $('rw-ico').textContent=rw.ico; $('rw-rar').textContent=rw.label; $('rw-rar').className='mono '+cls;
   $('rw-nm').textContent=rw.name; $('rw-desc').textContent=rw.desc;
   $('reward-ov').dataset.boss=boss?'1':'';
+  sfx(boss?'win':(rw.rar==='leg'?'legend':'chest'));
   $('reward-ov').classList.add('show');
 }
 function rewardContinue(){
@@ -1286,7 +1368,7 @@ function levelUp(){
   S.energyMax+=6; pendingLv++;
 }
 function flushLevel(cb){
-  if(pendingLv>0){ pendingLv=0; afterLvCb=cb||null; $('ov-lv').textContent=S.level; $('overlay').classList.add('show'); }
+  if(pendingLv>0){ pendingLv=0; afterLvCb=cb||null; $('ov-lv').textContent=S.level; sfx('level'); $('overlay').classList.add('show'); }
   else if(cb) cb();
 }
 function closeOverlay(){ $('overlay').classList.remove('show'); renderHome(); const cb=afterLvCb; afterLvCb=null; if(cb)cb(); }
