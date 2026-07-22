@@ -321,6 +321,11 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 @keyframes lunge{0%,100%{transform:translateX(0)}45%{transform:translateX(36px)}}
 #muteBtn{position:absolute;bottom:74px;left:12px;z-index:130;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:rgba(8,12,24,.75);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
 .popfx{position:absolute;font-family:'Orbitron',sans-serif;font-weight:800;text-shadow:0 2px 8px rgba(0,0,0,.85);pointer-events:none;z-index:40}
+.coach{position:absolute;left:0;right:0;bottom:0;z-index:150;background:linear-gradient(180deg,rgba(11,17,34,.98),rgba(6,10,20,.99));border-top:2px solid var(--cyan-b);border-radius:20px 20px 32px 32px;padding:18px 18px 24px;transform:translateY(120%);transition:transform .35s cubic-bezier(.2,.9,.3,1);box-shadow:0 -14px 40px rgba(0,0,0,.6)}
+.coach.show{transform:none}
+.coach .cmsg{font-size:14.5px;color:#e8eefc;line-height:1.55;margin-bottom:13px}
+.coach .cmsg b{color:var(--cyan-b)}
+.coach .btn{width:100%}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -479,7 +484,7 @@ canvas.cv-pixel{image-rendering:pixelated}
       <div class="screen" id="s-mapa">
         <div class="row"><div class="sec-title">🗺️ Mapa del mundo</div><span class="mono" style="font-size:11px;color:var(--cyan-b)">🌙<span id="map-en">0</span></span></div>
         <div class="mut">Toca una región desbloqueada para enviar a tu Cazador. Avanza con tus pasos.</div>
-        <div class="region cur" onclick="enterAbyss()" style="border-color:#8b5cf6;background:rgba(139,92,246,.07);margin-top:8px">
+        <div class="region cur" id="abyss-card" onclick="enterAbyss()" style="border-color:#8b5cf6;background:rgba(139,92,246,.07);margin-top:8px">
           <div class="ico" style="border-color:#8b5cf6;color:#8b5cf6;background:#8b5cf622">🕳️</div>
           <div class="info"><div class="n">Abismo Infinito</div><div class="s">Pisos sin fin · dificultad y botín crecientes · récord: <b id="abyss-best" style="color:#a78bfa">0</b></div></div>
           <div class="rk" style="color:#8b5cf6">∞</div>
@@ -644,6 +649,7 @@ canvas.cv-pixel{image-rendering:pixelated}
       <div id="af-result" style="font-family:'Orbitron';font-weight:800;font-size:24px;opacity:0;transition:.3s;margin-top:2px"></div>
       <button class="btn" id="af-btn" style="width:70%;margin-top:8px;display:none" onclick="closeArenaOv()">CONTINUAR</button>
     </div>
+    <div class="coach" id="coach"><div class="cmsg" id="coach-msg"></div><button class="btn" id="coach-btn" onclick="coachNext()">Siguiente</button></div>
 
     <!-- bottom nav -->
     <div class="botnav" id="botnav" style="display:none">
@@ -651,7 +657,7 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button data-nav="mapa" onclick="go('mapa')">🗺️</button>
       <button data-nav="mochila" onclick="go('mochila')">🎒</button>
       <button data-nav="personaje" onclick="go('personaje')">🛡️</button>
-      <button data-nav="arena" onclick="go('arena')">⚔️</button>
+      <button id="nav-arena" data-nav="arena" onclick="go('arena')">⚔️</button>
       <button data-nav="tienda" onclick="go('tienda')">🏪</button>
     </div>
   </div>
@@ -669,7 +675,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v6 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v7 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -690,6 +696,7 @@ const S = {
   m:{kills:0,loot:0,boss:0,gold:0}, mClaimed:{},
   arena:{trophies:0,wins:0,losses:0,opps:null,board:null},
   abyss:{best:0},
+  tutorialDone:false, announced:{},
   dg:null
 };
 const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
@@ -763,6 +770,7 @@ async function finishOnboarding(){
   const btn=event&&event.target; if(btn){btn.disabled=true;btn.textContent='⚙ FORJANDO CAZADOR…';}
   await lpcBuildHero();
   $('botnav').style.display='flex'; go('home');
+  if(!S.tutorialDone) startTutorial();
   if(btn){btn.disabled=false;btn.textContent='⚔ ACEPTAR EL LLAMADO';}
 }
 
@@ -778,7 +786,7 @@ function go(scr){
   if(scr==='tienda') renderShop();
   if(scr==='arena') renderArena();
   if(scr==='home') renderHome();
-  $('screenwrapscroll');
+  refreshUnlocks();
   document.querySelector('.screenwrap').scrollTop=0;
 }
 
@@ -929,6 +937,27 @@ function finishArena(me,opp,res){
   genOpps();
 }
 function closeArenaOv(){ $('arena-ov').classList.remove('show'); renderArena(); refreshCurr(); }
+/* ---------- desbloqueo progresivo de sistemas (protege el D1) ---------- */
+function unlocked(f){ if(f==='forja')return S.level>=3; if(f==='arena')return S.level>=5; if(f==='abismo')return !!S.cleared[0]; return true; }
+function refreshUnlocks(){
+  const na=$('nav-arena'); if(na)na.style.display=unlocked('arena')?'':'none';
+  const tf=$('tab-forge'); if(tf)tf.style.display=unlocked('forja')?'':'none';
+  const abc=$('abyss-card'); if(abc)abc.style.display=unlocked('abismo')?'':'none';
+  if(!S.announced)S.announced={};
+  [['forja','⚒️ Forja','Mejora tu equipo con oro, en la Tienda'],['arena','⚔️ Arena PvP','Lucha contra otros cazadores'],['abismo','🕳️ Abismo Infinito','Pisos sin fin y récord, en el Mapa']].forEach(a=>{
+    if(unlocked(a[0]) && !S.announced[a[0]]){ S.announced[a[0]]=true; if(S.tutorialDone) showToast('🔓','LEG','¡'+a[1]+' desbloqueado!',a[2]); }
+  });
+}
+/* ---------- tutorial guiado (enseña el gancho en ~30s) ---------- */
+let TUT=0;
+function coachShow(msg,cta){ $('coach-msg').innerHTML=msg; $('coach-btn').textContent=cta; $('coach').classList.add('show'); }
+function coachHide(){ $('coach').classList.remove('show'); }
+function startTutorial(){ TUT=1; coachShow('👋 Bienvenido, Cazador. Lo que te hace fuerte aquí es <b>moverte</b>: cada <b>100 pasos reales = 1 avance</b> de tu héroe.','Ver cómo funciona ▶'); }
+function coachNext(){
+  if(TUT===1){ TUT=2; coachHide(); enterDungeon(REGIONS[0]); setTimeout(()=>coachShow('Te doy unos pasos de ejemplo. Mira cómo tu Cazador avanza y consigue botín 👇','Dar pasos de ejemplo'),450); }
+  else if(TUT===2){ TUT=3; coachHide(); simSteps(300); setTimeout(()=>coachShow('¡Eso es! En la app real lo mueven <b>tus pasos de verdad</b>, y sigue avanzando aunque cierres la app. 🚶','¡Entendido, a caminar!'),3500); }
+  else { TUT=0; S.tutorialDone=true; coachHide(); if(S.dg){ if(S.dg.timer)clearTimeout(S.dg.timer); S.dg=null; } go('home'); showToast('⚔️','RARA','¡Listo!','Tu aventura empieza con tus pasos'); }
+}
 function gainXP(amount){
   S.exp+=amount;
   while(S.exp>=S.expMax){ S.exp-=S.expMax; levelUp(); }
@@ -1371,7 +1400,7 @@ function flushLevel(cb){
   if(pendingLv>0){ pendingLv=0; afterLvCb=cb||null; $('ov-lv').textContent=S.level; sfx('level'); $('overlay').classList.add('show'); }
   else if(cb) cb();
 }
-function closeOverlay(){ $('overlay').classList.remove('show'); renderHome(); const cb=afterLvCb; afterLvCb=null; if(cb)cb(); }
+function closeOverlay(){ $('overlay').classList.remove('show'); renderHome(); refreshUnlocks(); const cb=afterLvCb; afterLvCb=null; if(cb)cb(); }
 
 /* ---------- toast ---------- */
 let toastT;
