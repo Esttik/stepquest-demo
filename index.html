@@ -332,6 +332,12 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .choicecard .ct{flex:1;text-align:left}
 .choicecard .cn{font-family:'Orbitron';font-weight:700;font-size:14.5px}
 .choicecard .cd{font-size:12px;color:var(--muted);margin-top:2px}
+/* minijuego de esquiva (golpe definitivo del jefe) */
+.dodgewrap{margin-top:2px}
+.dodgehint{font-size:11px;color:#ff8fa3;text-align:center;margin-bottom:6px;font-family:'Orbitron'}
+.dodgetrack{position:relative;height:28px;border-radius:14px;background:rgba(255,255,255,.07);overflow:hidden;border:1px solid var(--line)}
+.dodgezone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(56,229,160,.35),rgba(56,229,160,.55));border-left:2px solid var(--green);border-right:2px solid var(--green)}
+.dodgemarker{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;box-shadow:0 0 12px #fff;border-radius:2px}
 /* ---------- OPTIMIZACIÓN MÓVIL ---------- */
 #demoToggle{display:none}
 .demopanel .dclose{display:none;width:100%;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--muted);font-family:'Orbitron';font-size:11px;cursor:pointer}
@@ -687,7 +693,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v9 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v10 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1080,7 +1086,7 @@ function renderMap(){
 
 /* ---------- mazmorra: EXPEDICIÓN AUTOMÁTICA (avanza con los pasos) + jefe manual ---------- */
 const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Rata gigante','🐀'],['Golem menor','🪨']];
-function leaveDungeon(){ const d=S.dg; if(d&&d.timer)clearTimeout(d.timer); if(d){ S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); } S.dg=null; go('mapa'); }
+function leaveDungeon(){ const d=S.dg; if(d&&d.timer)clearTimeout(d.timer); if(d&&d.dodgeRAF)cancelAnimationFrame(d.dodgeRAF); if(d&&d.dodgeTO)clearTimeout(d.dodgeTO); if(d){ S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); } S.dg=null; go('mapa'); }
 function enterDungeon(r){
   S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
@@ -1237,7 +1243,7 @@ function startBoss(){
   const d=S.dg, lv=Math.max(d.r.minLv,S.level);
   const hp=lv*30+d.r.minLv*20+120;
   d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*3+8,boss:true};
-  d.turns=0; d.telegraph=false;
+  d.turns=0; d.telegraph=false; d.dodge=false;
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
   $('en-sprite').textContent=d.enemy.emo; $('en-sprite').classList.remove('charging');
@@ -1265,6 +1271,11 @@ function renderCmd(){
   const d=S.dg; if(!d)return;
   const busy=d.phase!=='combat';
   let h='';
+  if(d.dodge){
+    const zoneLeft=Math.max(0,d.zoneC-d.zoneHalf), zoneW=Math.min(100,d.zoneHalf*2);
+    $('cmd-area').innerHTML='<div class="dodgewrap"><div class="dodgehint">⚡ TIMING · esquiva en la zona verde</div><div class="dodgetrack"><div class="dodgezone" style="left:'+zoneLeft+'%;width:'+zoneW+'%"></div><div class="dodgemarker" id="dodge-marker" style="left:'+d.dodgePos+'%"></div></div><button class="btn" style="width:100%;margin-top:9px;background:linear-gradient(90deg,#ff4d6d,#ff8fa3);color:#2a0008;font-weight:800" onclick="dodgeTap()">🛡️ ¡ESQUIVAR!</button></div>';
+    return;
+  }
   if(d.menu==='magia'){
     h='<div class="submenu">';
     SKILLS.forEach((s,i)=>{ const cd=d.cd[i]||0; const off=(cd>0||busy);
@@ -1279,9 +1290,7 @@ function renderCmd(){
     if(!any) h+='<div class="mut" style="text-align:center;padding:8px">No te quedan objetos.</div>';
     h+='<button class="cmd-back" onclick="backMenu()">◀ Volver</button></div>';
   } else {
-    const tg=d.telegraph;
-    h=(tg?'<button class="btn" style="width:100%;margin-bottom:8px;background:linear-gradient(90deg,#ffb648,#ff7a2f);color:#2a1400;font-weight:800;animation:ragepulse 1s infinite" onclick="cmdDefend()">🛡️ ¡DEFENDER EL GOLPE!</button>':'')+
-      '<div class="actions4">'+
+    h='<div class="actions4">'+
       '<button class="btn" onclick="cmdAttack()">⚔️ Atacar</button>'+
       '<button class="btn violet" onclick="openMenu(\'magia\')">🔮 Magia</button>'+
       '<button class="btn gold" onclick="openMenu(\'objeto\')">🎒 Objeto</button>'+
@@ -1341,26 +1350,44 @@ function cmdFlee(){ if(!S.dg||S.dg.phase!=='combat')return; S.dg.menu='main';
 }
 function enemyStrike(){
   const d=S.dg,e=d.enemy; if(!e||e.hp<=0||d.phase!=='combat')return;
-  if(d.telegraph){ // no defendió a tiempo -> golpe brutal
-    d.telegraph=false; $('en-sprite').classList.remove('charging');
-    const dmg=Math.round(S.hpMax*0.4);
-    S.hp-=dmg; sfx('boss'); shake(); flashFx();
-    $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' descarga el golpe brutal</b> · −'+dmg+'❤';
-    renderCombat(); if(S.hp<=0){playerDown();return;} renderCmd(); return;
-  }
+  if(d.dodge)return;
   const dmg=Math.max(1,Math.round(e.atk*(0.8+Math.random()*0.4)-totalStat('resistencia')*0.7));
   S.hp-=dmg; renderCombat(); sfx('hurt');
   if(S.hp<=0){playerDown();return;}
-  if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ d.telegraph=true; $('en-sprite').classList.add('charging');
-    $('dg-log').innerHTML='⚠️ <b style="color:#ffb648">¡'+e.name+' prepara un GOLPE BRUTAL! Usa 🛡️ Defender.</b>'; renderCmd(); } }
+  if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ startDodge(); } }
 }
-function cmdDefend(){
-  const d=S.dg; if(!d||d.phase!=='combat')return; d.menu='main';
-  if(d.telegraph){ d.telegraph=false; $('en-sprite').classList.remove('charging');
-    const dmg=Math.round(S.hpMax*0.05); S.hp=Math.max(1,S.hp-dmg);
-    $('dg-log').innerHTML='🛡️ <b style="color:var(--green)">¡Bloqueas el golpe brutal!</b> Solo −'+dmg+'❤'; renderCombat(); renderCmd();
-  } else { const heal=Math.round(S.hpMax*0.06); S.hp=Math.min(S.hpMax,S.hp+heal);
-    $('dg-log').innerHTML='🛡️ Te cubres y recuperas · +'+heal+'❤'; renderCombat(); setTimeout(enemyStrike,520); }
+function startDodge(){
+  const d=S.dg,e=d.enemy; if(!d||!e)return;
+  d.dodge=true; d.telegraph=true;
+  const agi=totalStat('agilidad');
+  d.zoneHalf=Math.min(30, 9+agi*0.5);           // agilidad ensancha la zona segura
+  d.zoneC=22+Math.random()*56;
+  d.dodgeDir=1; d.dodgePos=Math.random()*100;
+  const spd=Math.max(0.9, 2.4-agi*0.035);       // agilidad ralentiza el marcador
+  $('en-sprite').classList.add('charging'); sfx('boss'); shake();
+  $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
+  renderCmd();
+  (function loop(){
+    if(!S.dg||!S.dg.dodge)return;
+    d.dodgePos+=d.dodgeDir*spd;
+    if(d.dodgePos>=100){d.dodgePos=100;d.dodgeDir=-1;} else if(d.dodgePos<=0){d.dodgePos=0;d.dodgeDir=1;}
+    const m=$('dodge-marker'); if(m)m.style.left=d.dodgePos+'%';
+    d.dodgeRAF=requestAnimationFrame(loop);
+  })();
+  d.dodgeTO=setTimeout(()=>{ if(S.dg&&S.dg.dodge) resolveDodge(false); }, 3000);
+}
+function dodgeTap(){ const d=S.dg; if(!d||!d.dodge)return; resolveDodge(Math.abs(d.dodgePos-d.zoneC)<=d.zoneHalf); }
+function resolveDodge(ok){
+  const d=S.dg,e=d.enemy; if(!d||!e)return;
+  if(d.dodgeRAF)cancelAnimationFrame(d.dodgeRAF); if(d.dodgeTO)clearTimeout(d.dodgeTO);
+  d.dodge=false; d.telegraph=false; $('en-sprite').classList.remove('charging');
+  if(ok){ const chip=Math.round(S.hpMax*0.03); S.hp=Math.max(1,S.hp-chip); sfx('crit'); heroLunge();
+    $('dg-log').innerHTML='✨ <b style="color:var(--green)">¡ESQUIVADO!</b> Evitas el golpe definitivo.'; }
+  else { const dmg=Math.round(S.hpMax*0.5); S.hp-=dmg; sfx('boss'); shake(); flashFx();
+    $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' te acierta de lleno</b> · −'+dmg+'❤'; }
+  renderCombat();
+  if(S.hp<=0){ playerDown(); return; }
+  renderCmd();
 }
 function playerDown(){
   if(S.dg && S.dg.abyss){ S.dg.phase='down'; $('dg-log').innerHTML='💀 El Guardián del Abismo te derrota...'; setTimeout(endAbyss,900); return; }
