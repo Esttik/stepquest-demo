@@ -629,7 +629,9 @@ canvas.cv-pixel{image-rendering:pixelated}
       <!-- RETOS: misiones + logros -->
       <div class="screen" id="s-retos">
         <div class="row"><div class="sec-title">🎯 Retos</div><button class="btn ghost" style="padding:6px 10px;font-size:11px" onclick="go('home')">Volver</button></div>
-        <div class="sec-title" style="font-size:13px;margin-top:8px">◈ Misiones</div>
+        <div class="sec-title" style="font-size:13px;margin-top:8px">📊 Tu historial</div>
+        <div id="life-stats" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        <div class="sec-title" style="font-size:13px;margin-top:16px">◈ Misiones</div>
         <div id="missions"></div>
         <div class="sec-title" style="font-size:13px;margin-top:16px">🏆 Logros</div>
         <div class="mut" style="font-size:11px;margin-bottom:2px">Hitos que se quedan para siempre. ¡Camina y desbloquéalos!</div>
@@ -708,7 +710,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v19 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v20 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -735,6 +737,13 @@ const S = {
 const RANKS=[[1,'E'],[6,'D'],[11,'C'],[18,'B'],[26,'A'],[35,'S']];
 function rank(){let r='E';for(const[l,x]of RANKS){if(S.level>=l)r=x;}return r;}
 const $=id=>document.getElementById(id);
+/* ---------- HISTORIAL DE POR VIDA (persistente entre sesiones; si el almacenamiento está bloqueado, funciona solo en la sesión) ---------- */
+const LIFEKEY='stepquest_life_v1';
+let LIFE={steps:0,bosses:0,abyss:0,expeditions:0};
+try{ const j=localStorage.getItem(LIFEKEY); if(j)LIFE=Object.assign(LIFE,JSON.parse(j)||{}); }catch(e){}
+let _lifeT=0;
+function saveLife(){ try{ localStorage.setItem(LIFEKEY,JSON.stringify(LIFE)); }catch(e){} }
+function lifeAddSteps(n){ LIFE.steps=(LIFE.steps||0)+n; if(!_lifeT){ _lifeT=setTimeout(()=>{_lifeT=0;saveLife();},800); } }   // guardado agrupado
 function toggleDemo(){ document.querySelector('.demopanel').classList.toggle('open'); }
 /* ---------- sonido (WebAudio, sin archivos) + juice ---------- */
 let AC=null, MUTE=false;
@@ -811,6 +820,7 @@ async function finishOnboarding(){
 
 /* ---------- navigation ---------- */
 function go(scr){
+  if(S.screen==='dungeon' && scr!=='dungeon' && S.dg) pauseDungeon();   // salir de la mazmorra por el menú CONGELA la run (no corre en segundo plano)
   S.screen=scr;
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   $('s-'+scr).classList.add('active');
@@ -914,7 +924,22 @@ function renderAchievements(){
   });
 }
 function claimAchiev(id){ const a=ACHIEVS.find(x=>x.id===id); if(!a||S.aClaimed[id]||a.get()<a.target)return; S.aClaimed[id]=true; if(a.reward.gold)S.gold+=a.reward.gold; if(a.reward.gems)S.gems+=a.reward.gems; sfx('level'); showToast('🏆','LEG','¡Logro desbloqueado!',a.name); renderRetos(); renderHome(); }
-function renderRetos(){ renderMissions(); renderAchievements(); }
+function renderLifeStats(){
+  const el=$('life-stats'); if(!el)return;
+  const km=(LIFE.steps||0)*0.72/1000;
+  const cells=[
+    ['👣','Pasos totales', fmt(LIFE.steps||0), 'var(--cyan-b)'],
+    ['📅','Pasos hoy', fmt(S.steps||0), '#fff'],
+    ['📏','Distancia total', (km>=1?km.toFixed(1):km.toFixed(2))+' km', 'var(--green)'],
+    ['👑','Jefes derrotados', fmt(LIFE.bosses||0), 'var(--gold)'],
+    ['🕳️','Récord Abismo', 'Piso '+Math.max(S.abyss.best||0,LIFE.abyss||0), 'var(--violet)'],
+    ['⭐','Nivel actual', S.level, '#fff'],
+  ];
+  el.innerHTML=cells.map(c=>'<div style="background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:12px;padding:9px 11px">'+
+    '<div style="font-size:10.5px;color:var(--muted)">'+c[0]+' '+c[1]+'</div>'+
+    '<div class="mono" style="font-weight:800;font-size:16px;color:'+c[3]+';margin-top:3px">'+c[2]+'</div></div>').join('');
+}
+function renderRetos(){ renderLifeStats(); renderMissions(); renderAchievements(); }
 /* ---------- ARENA PvP (asíncrona vs builds simuladas) ---------- */
 function heroPower(){ return Math.round(totalStat('fuerza')*3+totalStat('agilidad')*2.2+totalStat('vitalidad')*2+totalStat('resistencia')*2+totalStat('suerte')*1.6+S.level*6); }
 function heroCombatant(){ return {name:S.name, hp:S.hpMax, hpMax:S.hpMax, atk:totalStat('fuerza')*2+6, def:totalStat('resistencia')*0.7, crit:Math.min(70,totalStat('agilidad')*0.9+totalStat('suerte')*0.6), pow:heroPower()}; }
@@ -1100,7 +1125,7 @@ function checkDailyGoal(){
   }
 }
 function simSteps(n){
-  S.steps+=n;
+  S.steps+=n; lifeAddSteps(n);
   const xp=Math.round(n/22); gainXP(xp); $('home-gainxp').textContent='+'+xp;
   checkDailyGoal();
   if(S.dg){ // hay expedición activa: los pasos SIEMPRE alimentan el avance, estés o no en la pantalla
@@ -1110,8 +1135,8 @@ function simSteps(n){
   refreshUI(); flushLevel();
 }
 function simAway(n){   // pasos con la app cerrada
-  S.steps+=n; gainXP(Math.round(n/22)); checkDailyGoal();
-  if(S.dg){ S.dg.strideBuf=(S.dg.strideBuf||0)+n; }   // van a la expedición activa
+  S.steps+=n; lifeAddSteps(n); gainXP(Math.round(n/22)); checkDailyGoal();
+  if(S.dg){ S.dg.strideBuf=(S.dg.strideBuf||0)+n; if(S.screen==='dungeon') runExpedition(); }   // van a la expedición activa
   else { S.savedSteps=(S.savedSteps||0)+n; }
   refreshUI(); flushLevel();
   showToast('🌙','RARA','Caminaste '+fmt(n)+' pasos',S.dg?'Aplicados a tu expedición activa':'Guardados para tu expedición');
@@ -1154,7 +1179,9 @@ function renderMap(){
 /* ---------- mazmorra: EXPEDICIÓN AUTOMÁTICA (avanza con los pasos) + jefe manual ---------- */
 const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Rata gigante','🐀'],['Golem menor','🪨']];
 function pauseDungeon(){ const d=S.dg; if(!d)return; // congela animaciones y timers pero CONSERVA el progreso
+  d.paused=true;
   if(d.timer){clearTimeout(d.timer);d.timer=null;} d.running=false;
+  if(d.cbtTO){clearTimeout(d.cbtTO);d.cbtTO=null;}   // cancela el turno de combate pendiente (no pega en segundo plano)
   if(d.dodgeRAF){cancelAnimationFrame(d.dodgeRAF);d.dodgeRAF=0;} if(d.dodgeTO){clearTimeout(d.dodgeTO);d.dodgeTO=null;}
   d.dodge=false; d.telegraph=false; const es=$('en-sprite'); if(es)es.classList.remove('charging');
   const ws=$('walk-scene'); if(ws)ws.classList.remove('walking');
@@ -1162,12 +1189,15 @@ function pauseDungeon(){ const d=S.dg; if(!d)return; // congela animaciones y ti
 function leaveDungeon(){ pauseDungeon(); go('mapa'); }   // salir NO reinicia: la expedición queda guardada
 function resumeDungeon(){   // volver a la expedición en curso, justo donde estaba
   const d=S.dg; if(!d){ go('mapa'); return; }
+  d.paused=false;
+  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax); if(S.hp<=0)S.hp=S.hpMax;   // reengancha vida al equipo actual
+  if(d.phase==='down'||d.phase==='dead'){ d.phase='auto'; d.enemy=null; }   // normaliza estados transitorios si saliste justo en ellos
   const r=d.r;
   $('dg-title').textContent=d.abyss?('Abismo · Piso '+d.floor):r.name;
   $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
   $('walk-scene').classList.toggle('rage', (d.rageActive||0)>0);
   go('dungeon'); updateExpUI(); updateRageUI();
-  if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} showCombat(); renderCombat(); }
+  if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} d.menu='main'; showCombat(); renderCombat(); }
   else { $('dg-arena').classList.remove('boss'); showWalk(); runExpedition(); }   // procesa los pasos acumulados mientras no mirabas
 }
 function enterDungeon(r){
@@ -1214,7 +1244,7 @@ function enterAbyss(){
 }
 function nextAbyssFloor(){
   const d=S.dg; if(!d)return;
-  d.floor++; if(d.floor>(S.abyss.best||0)) S.abyss.best=d.floor;
+  d.floor++; if(d.floor>(S.abyss.best||0)) S.abyss.best=d.floor; if(d.floor>(LIFE.abyss||0)){LIFE.abyss=d.floor; saveLife();}
   const r=abyssRegion(d.floor);
   d.r=r; d.idx=0; d.total=r.rooms; d.phase='auto'; d.enemy=null; d.turns=0; d.telegraph=false;
   $('dg-arena').classList.remove('boss'); $('en-sprite').classList.remove('charging');
@@ -1228,9 +1258,10 @@ function nextAbyssFloor(){
 function endAbyss(){
   const d=S.dg; if(!d)return; const reached=d.floor;
   d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
+  S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); d.strideBuf=0;   // pasos en cola vuelven a Energía
   $('walk-scene').classList.remove('walking','rage'); $('en-sprite').classList.remove('charging');
   if(reached>(S.abyss.best||0)) S.abyss.best=reached;
-  setTimeout(()=>{ S.hp=S.hpMax; showToast('🕳️','EPICA','Abismo: llegaste al piso '+reached,'Récord: '+(S.abyss.best||reached)); S.dg=null; go('mapa'); },1300);
+  setTimeout(()=>{ if(S.dg!==d)return; S.hp=S.hpMax; showToast('🕳️','EPICA','Abismo: llegaste al piso '+reached,'Récord: '+(S.abyss.best||reached)); S.dg=null; go('mapa'); },1300);
 }
 function showWalk(){ $('walk-panel').style.display='block'; $('combat-panel').style.display='none'; }
 function showCombat(){ $('walk-panel').style.display='none'; $('combat-panel').style.display='block'; }
@@ -1259,11 +1290,15 @@ function pushFeed(ico,rar,name,sub){
   while(f.children.length>8) f.removeChild(f.lastChild);
   $('walk-log').innerHTML=name;
 }
+/* turno de combate diferido y SEGURO: se cancela al salir y nunca pega en segundo plano ni sobre otra run */
+function cbtDelay(fn,ms){ const d=S.dg; if(!d)return; if(d.cbtTO)clearTimeout(d.cbtTO);
+  d.cbtTO=setTimeout(()=>{ d.cbtTO=null; if(!S.dg||S.dg!==d||d.paused||S.screen!=='dungeon')return; fn(); },ms); }
 function runExpedition(){
-  const d=S.dg; if(!d||d.running||d.phase!=='auto')return;
+  const d=S.dg; if(!d||d.running||d.phase!=='auto'||d.paused)return;
   d.running=true; $('walk-scene').classList.add('walking');
   (function stepOne(){
     const d=S.dg; if(!d){return;}
+    if(d.paused){ d.running=false; return; }
     if(d.phase!=='auto'){ d.running=false; return; }
     const cost=strideCost(d);
     if((d.strideBuf||0)<cost){ d.running=false; $('walk-scene').classList.remove('walking'); updateExpUI(); return; }
@@ -1311,8 +1346,9 @@ function failExpedition(){
   const d=S.dg; if(!d)return;
   if(d.abyss){ endAbyss(); return; }
   d.phase='dead'; d.running=false; if(d.timer)clearTimeout(d.timer);
+  S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); d.strideBuf=0;   // los pasos en cola NO se pierden: vuelven a tu Energía
   $('walk-scene').classList.remove('walking','rage'); updateExpUI();
-  setTimeout(()=>{ S.hp=S.hpMax; showToast('💀','RARA','Expedición fallida','Te retiras malherido. Sube tu poder y vuelve.'); S.dg=null; go('mapa'); },1300);
+  setTimeout(()=>{ if(S.dg!==d)return; S.hp=S.hpMax; showToast('💀','RARA','Expedición fallida','Te retiras malherido. Sube tu poder y vuelve.'); S.dg=null; go('mapa'); },1300);
 }
 function updateRageUI(){
   const d=S.dg; if(!d)return;
@@ -1405,7 +1441,7 @@ function doDamage(mult,label){
   e.hp-=dmg; floatDmg(dmg,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+dmg+'</b>'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
-  if(e.hp<=0){ setTimeout(enemyDown,450); } else { setTimeout(enemyStrike,560); }
+  if(e.hp<=0){ cbtDelay(enemyDown,450); } else { cbtDelay(enemyStrike,560); }
 }
 function doDamageMulti(mult,hits,label){
   const e=S.dg.enemy; if(!e)return;
@@ -1415,7 +1451,7 @@ function doDamageMulti(mult,hits,label){
   e.hp-=total; floatDmg(total,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+total+'</b> ('+hits+' golpes)'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
-  if(e.hp<=0){ setTimeout(enemyDown,450); } else { setTimeout(enemyStrike,560); }
+  if(e.hp<=0){ cbtDelay(enemyDown,450); } else { cbtDelay(enemyStrike,560); }
 }
 function cmdAttack(){ if(!S.dg||S.dg.phase!=='combat')return; tickCds(); S.dg.menu='main';
   const w=(S.equipped.arma&&S.equipped.arma.name)?S.equipped.arma.name:'tus puños';
@@ -1427,19 +1463,20 @@ function useSkill(i){ const d=S.dg; if(!d||d.phase!=='combat'||(d.cd[i]||0)>0)re
 function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||(d.items[i]||0)<=0)return; const it=ITEMS[i];
   tickCds(); d.items[i]--; d.menu='main';
   if(it.heal){ const heal=Math.round(S.hpMax*it.heal); S.hp=Math.min(S.hpMax,S.hp+heal);
-    $('dg-log').innerHTML='🧪 Usas <b>'+it.name+'</b> · <b style="color:var(--green)">+'+heal+' vida</b>'; renderCombat(); setTimeout(enemyStrike,560); }
+    $('dg-log').innerHTML='🧪 Usas <b>'+it.name+'</b> · <b style="color:var(--green)">+'+heal+' vida</b>'; renderCombat(); cbtDelay(enemyStrike,560); }
   else if(it.dmg){ const e=d.enemy; e.hp-=it.dmg; floatDmg(it.dmg,false);
     $('dg-log').innerHTML='💣 Lanzas <b>'+it.name+'</b> · <b>'+it.dmg+'</b> de daño'; renderCombat();
-    if(e.hp<=0)setTimeout(enemyDown,450); else setTimeout(enemyStrike,560); }
+    if(e.hp<=0)cbtDelay(enemyDown,450); else cbtDelay(enemyStrike,560); }
 }
 function cmdFlee(){ if(!S.dg||S.dg.phase!=='combat')return; S.dg.menu='main';
   const chance=45+totalStat('agilidad');
   if(Math.random()*100<chance){ S.dg.phase='auto'; $('dg-arena').classList.remove('boss'); $('dg-log').innerHTML='🏃 Te repliegas del jefe.';
-    setTimeout(()=>{ showWalk(); $('walk-log').innerHTML='Te repliegas. Camina para volver a enfrentarte al jefe.'; updateExpUI(); },650); }
-  else{ $('dg-log').innerHTML='🏃 ¡No logras huir!'; setTimeout(enemyStrike,560); }
+    cbtDelay(()=>{ showWalk(); $('walk-log').innerHTML='Te repliegas. Camina para volver a enfrentarte al jefe.'; updateExpUI(); },650); }
+  else{ $('dg-log').innerHTML='🏃 ¡No logras huir!'; cbtDelay(enemyStrike,560); }
 }
 function enemyStrike(){
-  const d=S.dg,e=d.enemy; if(!e||e.hp<=0||d.phase!=='combat')return;
+  const d=S.dg; if(!d||d.paused||S.screen!=='dungeon')return;
+  const e=d.enemy; if(!e||e.hp<=0||d.phase!=='combat')return;
   if(d.dodge)return;
   const dmg=Math.max(1,Math.round(e.atk*(0.8+Math.random()*0.4)-totalStat('resistencia')*0.7));
   S.hp-=dmg; renderCombat(); sfx('hurt');
@@ -1497,10 +1534,11 @@ function resolveDodge(ok){
   renderCmd();
 }
 function playerDown(){
-  if(S.dg && S.dg.abyss){ S.dg.phase='down'; $('dg-log').innerHTML='💀 El Guardián del Abismo te derrota...'; setTimeout(endAbyss,900); return; }
-  S.dg.phase='down';
+  const d=S.dg; if(!d)return;
+  if(d.abyss){ d.phase='down'; $('dg-log').innerHTML='💀 El Guardián del Abismo te derrota...'; cbtDelay(endAbyss,900); return; }
+  d.phase='down';
   $('dg-log').innerHTML='💀 Has caído... El Sistema te retira con vida.';
-  setTimeout(()=>{ S.hp=S.hpMax; $('dg-arena').classList.remove('boss'); S.dg.phase='auto'; showWalk();
+  cbtDelay(()=>{ S.hp=S.hpMax; $('dg-arena').classList.remove('boss'); d.phase='auto'; showWalk();
     $('walk-log').innerHTML='Te recuperas. Mejora tu equipo o camina más y vuelve a por el jefe.';
     $('walk-actions').innerHTML=''; updateExpUI();
   },1100);
@@ -1555,13 +1593,14 @@ function makeItem(good){
   return it;
 }
 function enemyDown(){
-  const d=S.dg, wasBoss=d.enemy.boss;
+  const d=S.dg; if(!d||!d.enemy)return;
+  const wasBoss=d.enemy.boss;
   sfx('win');
-  if(wasBoss) S.cleared[d.r.id]=true;
+  if(wasBoss && !d.abyss) S.cleared[d.r.id]=true;   // el Abismo no marca regiones del mapa
   d.phase='reward';
   const xp=wasBoss?d.r.minLv*30+40:d.r.minLv*8+10;
   const gold=wasBoss?150:12+Math.floor(Math.random()*16);
-  S.gold+=gold; gainXP(xp); S.m.gold+=gold; if(wasBoss)S.m.boss++;
+  S.gold+=gold; gainXP(xp); S.m.gold+=gold; if(wasBoss){S.m.boss++; LIFE.bosses=(LIFE.bosses||0)+1; saveLife();}
   if(wasBoss && !d.abyss){ showChoice(); return; }
   showReward(rollReward(wasBoss,xp,gold),wasBoss);
 }
@@ -1694,7 +1733,7 @@ function equip(it){
   S.equipped[it.slot]=it;
   S.inventory=S.inventory.filter(x=>x!==it);
   if(prev) S.inventory.push(prev);
-  S.hpMax=100+totalStat('vitalidad')*8;
+  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);
   showToast(it.ico,it.rar.toUpperCase(),'Equipado: '+it.name,statText(it));
   if(S.screen==='mochila')renderInv();
   if(S.screen==='personaje')renderHero();
@@ -1741,7 +1780,7 @@ function openSlot(slotId){
   $('slot-ov-inner').innerHTML=h; $('slot-ov').classList.add('show');
 }
 function pickSlot(gi){ const it=S.inventory[gi]; if(!it)return; equip(it); closeSlotPicker(); renderHero(); }
-function unequipSlot(){ const id=S._slot, cur=S.equipped[id]; if(cur){ S.equipped[id]=null; S.inventory.push(cur); S.hpMax=100+totalStat('vitalidad')*8; } closeSlotPicker(); renderHero(); }
+function unequipSlot(){ const id=S._slot, cur=S.equipped[id]; if(cur){ S.equipped[id]=null; S.inventory.push(cur); S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax); } closeSlotPicker(); renderHero(); }
 function closeSlotPicker(){ $('slot-ov').classList.remove('show'); }
 function openSkins(){
   let h='<div class="sys mono" style="color:var(--gold);letter-spacing:2px">✨ ASPECTO ✨</div>';
@@ -1771,7 +1810,7 @@ function renderStats(){
 }
 document.querySelectorAll('.plusbtn').forEach(b=>b.onclick=()=>{
   if(S.points<=0)return; S.stats[b.dataset.s]++; S.points--;
-  if(b.dataset.s==='vitalidad'){S.hpMax=100+totalStat('vitalidad')*8;}
+  if(b.dataset.s==='vitalidad'){S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);}
   renderStats();
 });
 
@@ -1836,7 +1875,7 @@ function upgradeItem(it){
   if(S.gold<cost){ showToast('🪙','ORO','Te falta oro','Necesitas '+cost+' 🪙 · consíguelo caminando y en combate'); return; }
   S.gold-=cost; it.plus=(it.plus||0)+1;
   ['fuerza','agilidad','resistencia','vitalidad','suerte'].forEach(k=>{ if(it[k]) it[k]+=1; });
-  S.hpMax=100+totalStat('vitalidad')*8;
+  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);
   showToast(it.ico,'FORJA','¡'+it.name+' mejorado a +'+it.plus+'!','+1 a sus estadísticas');
   renderShop(); if(S.screen==='personaje')renderHero();
 }
@@ -1912,16 +1951,24 @@ async function obRebuild(){ const t=++obToken; const ld=$('ob-load'); if(ld)ld.c
 function obSetName(v){ S.name=v||'Kael'; }
 
 const WALKF=[1,2,3,4,5,6,7,8];
-function drawFrame(ctx,sheet,col,row){ if(!ctx)return; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.imageSmoothingEnabled=false; if(sheet)ctx.drawImage(sheet,col*64,row*64,64,64,0,0,64,64); }
-function lpcDrawHero(){ const cv=$('hero-canvas'); if(!cv||!HERO_SHEET)return; drawFrame(cv.getContext('2d'),HERO_SHEET,WALKF[Math.floor(_anim)%WALKF.length],2); }
-function lpcDrawAvatar(){ const pic=$('home-emoji'); if(!pic)return; if(!HERO_SHEET){pic.textContent=S.emoji;return;} let cv=pic.querySelector('canvas'); if(!cv){pic.textContent='';cv=document.createElement('canvas');cv.width=64;cv.height=64;cv.className='cv-pixel';cv.style.cssText='width:100%;height:100%;border-radius:50%';pic.appendChild(cv);} const ctx=cv.getContext('2d'); ctx.clearRect(0,0,64,64); ctx.imageSmoothingEnabled=false; ctx.drawImage(HERO_SHEET,17,132,30,30,2,4,60,60); }
+function drawFrame(ctx,sheet,col,row){ drawFrameY(ctx,sheet,col,row,0); }
+function drawFrameY(ctx,sheet,col,row,dy){ if(!ctx)return; ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); ctx.imageSmoothingEnabled=false; if(sheet)ctx.drawImage(sheet,col*64,row*64,64,64,0,Math.round(dy||0),64,64); }
+/* balanceo suave de "respiración" para el estado de reposo (parado) */
+function idleBob(){ return Math.sin(_anim*1.3)*1.3; }
+/* ritmo de las piernas al caminar: más pasos en cola = anda MÁS rápido (hasta ~2.7x) */
+function walkPace(){ if(!S.dg)return 1; const cost=strideCost(S.dg)||100; return 1+Math.min(1.7,(S.dg.strideBuf||0)/(cost*1.5)); }
+function lpcDrawHero(){ const cv=$('hero-canvas'); if(!cv||!HERO_SHEET)return; drawFrameY(cv.getContext('2d'),HERO_SHEET,0,2, idleBob()); }   // en la ficha está parado -> reposo
+function lpcDrawAvatar(){ const pic=$('home-emoji'); if(!pic)return; if(!HERO_SHEET){pic.textContent=S.emoji;return;} let cv=pic.querySelector('canvas'); if(!cv){pic.textContent='';cv=document.createElement('canvas');cv.width=64;cv.height=64;cv.className='cv-pixel';cv.style.cssText='width:100%;height:100%;border-radius:50%';pic.appendChild(cv);} const ctx=cv.getContext('2d'); ctx.clearRect(0,0,64,64); ctx.imageSmoothingEnabled=false; ctx.drawImage(HERO_SHEET,17,132,30,30,2,4+idleBob()*0.7,60,60); }   // avatar del inicio "respira"
 
-let _anim=0;
+let _anim=0, _walk=0;
 function lpcAnimLoop(){ _anim+=0.085;
-  const oc=$('ob-canvas'); if(oc && S.screen==='onboarding') drawFrame(oc.getContext('2d'),PREV_SHEET,WALKF[Math.floor(_anim)%WALKF.length],2);
+  const oc=$('ob-canvas'); if(oc && S.screen==='onboarding'){ _walk+=0.12; drawFrame(oc.getContext('2d'),PREV_SHEET,WALKF[Math.floor(_walk)%WALKF.length],2); }
   if(S.screen==='personaje') lpcDrawHero();
-  const wc=$('walk-canvas'); if(wc && HERO_SHEET){ const sc=$('walk-scene'); const walking=sc&&sc.classList.contains('walking'); drawFrame(wc.getContext('2d'),HERO_SHEET, walking?WALKF[Math.floor(_anim)%WALKF.length]:0, 3); }
-  const cbp=$('cbt-player'); if(cbp && HERO_SHEET){ const cpv=$('combat-panel'); const vis=cpv&&cpv.style.display!=='none'&&S.screen==='dungeon'; const cx=cbp.getContext('2d'); if(vis) drawFrame(cx,HERO_SHEET,0,3); else cx.clearRect(0,0,64,64); }
+  if(S.screen==='home') lpcDrawAvatar();   // el avatar del inicio se anima (reposo)
+  const wc=$('walk-canvas'); if(wc && HERO_SHEET){ const sc=$('walk-scene'); const walking=sc&&sc.classList.contains('walking'); const cx=wc.getContext('2d');
+    if(walking){ _walk+=0.09*walkPace(); drawFrameY(cx,HERO_SHEET,WALKF[Math.floor(_walk)%WALKF.length],3,0); }   // andando: velocidad según ritmo
+    else { drawFrameY(cx,HERO_SHEET,0,3, idleBob()); } }                                                          // parado: reposo con respiración
+  const cbp=$('cbt-player'); if(cbp && HERO_SHEET){ const cpv=$('combat-panel'); const vis=cpv&&cpv.style.display!=='none'&&S.screen==='dungeon'; const cx=cbp.getContext('2d'); if(vis) drawFrameY(cx,HERO_SHEET,0,3, idleBob()); else cx.clearRect(0,0,64,64); }
   requestAnimationFrame(lpcAnimLoop);
 }
 
