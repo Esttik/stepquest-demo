@@ -708,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v15 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v16 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1082,7 +1082,7 @@ function refreshUI(){
   else if(S.screen==='tienda') renderShop();
 }
 const STEP_STRIDE=100;   // 100 pasos = 1 avance (base)
-function strideCost(d){ if(!d)return STEP_STRIDE; const diff=d.abyss?(d.floor||1):(d.r.minLv||1); return Math.round(STEP_STRIDE*(1+(diff-1)*0.35)); }  // mazmorra más difícil = más energía por avance
+function strideCost(d){ if(!d)return STEP_STRIDE; const diff=d.abyss?(d.floor||1):(d.r.minLv||1); return Math.round(STEP_STRIDE*Math.pow(diff,1.6)); }  // curva de potencia: zonas difíciles cuestan MUCHÍSIMO más
 function checkDailyGoal(){
   if(!S.goalDone && S.steps>=S.stepGoal){
     S.goalDone=true; S.streak=(S.streak||0)+1;
