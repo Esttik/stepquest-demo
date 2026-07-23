@@ -481,7 +481,7 @@ canvas.cv-pixel{image-rendering:pixelated}
         </div>
         <div class="card" style="border-color:rgba(139,92,246,.4)">
           <div class="row"><span class="h" style="margin:0">⚡ Energía</span><span class="mono" style="font-size:24px;color:var(--cyan-b);font-weight:800"><span id="home-saved">0</span></span></div>
-          <div class="mut" style="font-size:10.5px;margin-top:1px">pasos sin gastar · <span id="home-expname" style="color:#a78bfa">—</span></div>
+          <div class="mut" style="font-size:10.5px;margin-top:1px"><span id="home-savedlbl">pasos sin gastar</span> · <span id="home-expname" style="color:#a78bfa">—</span></div>
         </div>
         <div class="card" onclick="go('retos')" style="cursor:pointer">
           <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)"><span id="retos-sum"></span> ▸</span></div>
@@ -708,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v18 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v19 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -828,6 +828,9 @@ function go(scr){
 
 /* ---------- home / activity ---------- */
 function fmt(n){return n.toLocaleString('es-ES');}
+/* energía visible = pasos sin gastar (banco) + los que ya están alimentando la expedición activa.
+   Así el contador SIEMPRE sube al caminar, haya o no una expedición en curso. */
+function availEnergy(){ return (S.savedSteps||0) + (S.dg?Math.round(S.dg.strideBuf||0):0); }
 function renderHome(){
   lpcDrawAvatar(); $('home-name').textContent=S.name;
   $('home-rank').textContent='CAZADOR · RANGO '+rank();
@@ -840,8 +843,10 @@ function renderHome(){
   $('dq-goal').textContent=fmt(S.stepGoal);
   $('dq-steps').textContent=fmt(Math.min(S.steps,S.stepGoal))+' / '+fmt(S.stepGoal);
   const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓ cumplida';
-  $('home-saved').textContent=fmt(S.savedSteps||0);
-  const fr=frontierRegion(); $('home-expname').textContent=fr?fr.name:'Todo despejado ✓';
+  $('home-saved').textContent=fmt(availEnergy());
+  const lbl=$('home-savedlbl'), en=$('home-expname');
+  if(S.dg){ if(lbl)lbl.textContent='⚡ alimentando'; if(en)en.textContent=(S.dg.abyss?('Abismo · Piso '+S.dg.floor):(S.dg.r?S.dg.r.name:'expedición')); }
+  else { if(lbl)lbl.textContent='pasos sin gastar'; const fr=frontierRegion(); if(en)en.textContent=fr?fr.name:'Todo despejado ✓'; }
   const ng=$('home-nudge'); if(ng)ng.textContent=nextGoal();
   const rs=$('retos-sum'); if(rs){ const am=MISSIONS.filter(m=>!S.mClaimed[m.id]).length; const rl=ACHIEVS.filter(a=>!S.aClaimed[a.id]&&a.get()>=a.target).length; rs.textContent=am+' misiones'+(rl?' · '+rl+' logro'+(rl>1?'s':'')+' ✓':''); }
   const cta=$('home-cta');
@@ -1120,7 +1125,7 @@ const REGIONS=[
   {id:3,name:'Trono del Monarca',ico:'👑',rk:'S',minLv:16,rooms:7,color:'#ff4d6d',boss:'Monarca de Ceniza',bemo:'👑'}
 ];
 function renderMap(){
-  $('map-en').textContent=fmt(S.savedSteps||0);
+  $('map-en').textContent=fmt(availEnergy());
   const ab=$('abyss-best'); if(ab)ab.textContent=S.abyss.best||0;
   const el=$('regions'); el.innerHTML='';
   const frontier=REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]);
