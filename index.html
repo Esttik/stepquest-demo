@@ -166,6 +166,16 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .walker{position:absolute;left:50%;bottom:34%;transform:translateX(-50%) scaleX(-1);font-size:46px;filter:drop-shadow(0 6px 6px rgba(0,0,0,.5))}
 .scene.walking .walker{animation:bob .32s ease-in-out infinite}
 @keyframes bob{0%,100%{transform:translateX(-50%) scaleX(-1) translateY(0)}50%{transform:translateX(-50%) scaleX(-1) translateY(-7px)}}
+/* ===== silueta con carácter propio por zona (sigue desplazándose = parallax) ===== */
+.scene[data-zone] .mid{-webkit-mask:none;mask:none;height:60px;bottom:30%;opacity:.9;background-repeat:repeat-x;background-position:bottom;background-size:120px 60px}
+.scene[data-zone="forest"] .mid{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 60 L15 16 L30 60 L45 24 L60 60 L75 14 L90 60 L105 26 L120 60 Z' fill='%231c4a2b'/%3E%3C/svg%3E")}
+.scene[data-zone="caves"] .mid{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 60 L20 22 L40 60 L60 26 L80 60 L100 20 L120 60 Z' fill='%233a2e5e'/%3E%3C/svg%3E")}
+.scene[data-zone="ruins"] .mid{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 60 L0 42 L14 42 L14 60 L24 60 L24 26 L42 26 L42 60 L58 60 L58 46 L72 46 L72 60 L88 60 L88 30 L104 30 L104 60 L120 60 Z' fill='%234a3a6a'/%3E%3C/svg%3E")}
+.scene[data-zone="throne"] .mid{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 60 L6 12 L14 12 L14 60 L34 60 L34 8 L42 8 L42 60 L64 60 L64 14 L72 14 L72 60 L96 60 L96 10 L104 10 L104 60 L120 60 Z' fill='%235a2436'/%3E%3C/svg%3E")}
+.scene[data-zone="abyss"] .mid{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cpath d='M0 60 L12 18 L24 60 L36 12 L48 60 L60 24 L72 60 L84 14 L96 60 L108 26 L120 60 Z' fill='%235b2a6e'/%3E%3C/svg%3E")}
+/* golpe del enemigo hacia el héroe */
+.enemy-sprite.atk{animation:enatk .42s ease}
+@keyframes enatk{0%{transform:scaleX(-1) translateX(0)}34%{transform:scaleX(-1) translateX(-30px) scale(1.07)}100%{transform:scaleX(-1) translateX(0)}}
 .actions4{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .actions4 .btn{font-size:13px;padding:12px 6px}
 /* command menu estilo FF */
@@ -475,9 +485,11 @@ canvas.cv-pixel{image-rendering:pixelated}
           <div class="lb">PASOS HOY</div>
           <div class="conv"><span style="color:var(--gold)">✦ <b id="home-gainxp">0</b> XP</span><span style="color:#ff4d6d">🔥 <b id="home-streak">1</b> días</span></div>
         </div>
-        <div class="card dq">
-          <div class="row"><span class="h" style="margin:0">🎁 Meta diaria</span><span class="pd" id="dq-steps">0 / 8.000</span></div>
-          <div class="mut" style="font-size:10.5px;margin-top:1px"><span id="dq-goal">8.000</span> pasos · cofre + racha 🔥</div>
+        <div class="card dq" style="border-color:rgba(255,138,92,.4)">
+          <div class="row"><span class="h" style="margin:0">🔥 Racha diaria</span><span class="mono" style="font-size:22px;font-weight:800;color:#ff8a5c"><span id="home-streak2">1</span> <span style="font-size:12px;color:var(--muted)">días</span></span></div>
+          <div class="row" style="margin-top:7px"><span class="h" style="margin:0;font-size:12px">🎁 Meta de hoy (<span id="dq-goal">8.000</span>)</span><span class="pd" id="dq-steps">0 / 8.000</span></div>
+          <div style="height:7px;border-radius:5px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden"><i id="dq-fill" style="display:block;height:100%;width:0;background:linear-gradient(90deg,#f5c451,#ffb648);transition:width .4s"></i></div>
+          <div class="mut" style="font-size:10.5px;margin-top:5px" id="daily-sub">Cofre de hoy · próximo hito</div>
         </div>
         <div class="card" style="border-color:rgba(139,92,246,.4)">
           <div class="row"><span class="h" style="margin:0">⚡ Energía</span><span class="mono" style="font-size:24px;color:var(--cyan-b);font-weight:800"><span id="home-saved">0</span></span></div>
@@ -705,18 +717,19 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button onclick="simSteps(2000)">👟 +2.000 pasos</button>
       <button onclick="simSteps(5000)">🏃 +5.000 pasos</button>
       <button onclick="simAway(4000)">🌙 Volver tras caminar (app cerrada)</button>
+      <button onclick="newDay()">📅 Simular nuevo día</button>
       <button class="reset" onclick="location.reload()">🔄 Reiniciar</button>
     </div>
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v20 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v21 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
   cls:'Guerrero', emoji:'🗡️', name:'Kael',
   level:1, exp:0, expMax:100,
-  steps:0, stepGoal:8000, trainGoal:6, trainedToday:0,
+  steps:0, dayStart:0, stepGoal:8000, trainGoal:6, trainedToday:0,
   savedSteps:0, goalDone:false,
   energy:0, energyMax:120,
   gold:0, gems:20, streak:1,
@@ -846,13 +859,19 @@ function renderHome(){
   $('home-rank').textContent='CAZADOR · RANGO '+rank();
   $('c-gold').textContent=fmt(S.gold); $('c-gems').textContent=S.gems;
   $('home-lv').textContent=S.level; $('home-xp').textContent=fmt(S.exp)+' / '+fmt(S.expMax);
-  $('home-steps').textContent=fmt(S.steps);
+  $('home-steps').textContent=fmt(stepsToday());
   $('home-streak').textContent=S.streak;
+  const s2=$('home-streak2'); if(s2)s2.textContent=S.streak;
   const pct=Math.min(100,S.exp/S.expMax*100);
   $('home-ring').style.background='conic-gradient(var(--cyan) 0% '+pct+'%, rgba(255,255,255,.07) '+pct+'% 100%)';
-  $('dq-goal').textContent=fmt(S.stepGoal);
-  $('dq-steps').textContent=fmt(Math.min(S.steps,S.stepGoal))+' / '+fmt(S.stepGoal);
-  const sdone=S.steps>=S.stepGoal; $('dq-steps').className=sdone?'ok':'pd'; if(sdone)$('dq-steps').textContent='✓ cumplida';
+  const dqg=$('dq-goal'); if(dqg)dqg.textContent=fmt(S.stepGoal);
+  const today=stepsToday(), sdone=today>=S.stepGoal;
+  $('dq-steps').textContent=sdone?'✓ cumplida':(fmt(Math.min(today,S.stepGoal))+' / '+fmt(S.stepGoal));
+  $('dq-steps').className=sdone?'ok':'pd';
+  const df=$('dq-fill'); if(df)df.style.width=Math.min(100,today/S.stepGoal*100)+'%';
+  const ds=$('daily-sub'); if(ds){ const rw=dailyReward((S.streak||0)+1), nm=nextMilestone(S.streak||0);
+    ds.innerHTML=(sdone?'✓ Cofre de hoy cobrado · ':'Cofre de hoy: <b style="color:var(--gold)">+'+fmt(rw.gold)+'🪙 +'+rw.gems+'💎</b> · ')+
+      (nm?('próximo hito: <b style="color:#ff8a5c">'+nm+' días</b> +'+STREAK_BONUS[nm]+'💎'):'¡racha legendaria! 🏆'); }
   $('home-saved').textContent=fmt(availEnergy());
   const lbl=$('home-savedlbl'), en=$('home-expname');
   if(S.dg){ if(lbl)lbl.textContent='⚡ alimentando'; if(en)en.textContent=(S.dg.abyss?('Abismo · Piso '+S.dg.floor):(S.dg.r?S.dg.r.name:'expedición')); }
@@ -901,11 +920,11 @@ function claimMission(id){
 }
 /* ---------- Logros (hitos permanentes) ---------- */
 const ACHIEVS=[
-  {id:'s10k', ico:'👟', name:'10.000 pasos en un día', get:()=>S.steps, target:10000, reward:{gems:5}},
-  {id:'s20k', ico:'🏃', name:'20.000 pasos en un día', get:()=>S.steps, target:20000, reward:{gems:8,gold:150}},
-  {id:'s30k', ico:'🔥', name:'30.000 pasos en un día', get:()=>S.steps, target:30000, reward:{gems:12,gold:250}},
-  {id:'s50k', ico:'⚡', name:'50.000 pasos en un día', get:()=>S.steps, target:50000, reward:{gems:20,gold:500}},
-  {id:'s100k', ico:'🌟', name:'100.000 pasos en un día', get:()=>S.steps, target:100000, reward:{gems:40,gold:1000}},
+  {id:'s10k', ico:'👟', name:'10.000 pasos en un día', get:()=>stepsToday(), target:10000, reward:{gems:5}},
+  {id:'s20k', ico:'🏃', name:'20.000 pasos en un día', get:()=>stepsToday(), target:20000, reward:{gems:8,gold:150}},
+  {id:'s30k', ico:'🔥', name:'30.000 pasos en un día', get:()=>stepsToday(), target:30000, reward:{gems:12,gold:250}},
+  {id:'s50k', ico:'⚡', name:'50.000 pasos en un día', get:()=>stepsToday(), target:50000, reward:{gems:20,gold:500}},
+  {id:'s100k', ico:'🌟', name:'100.000 pasos en un día', get:()=>stepsToday(), target:100000, reward:{gems:40,gold:1000}},
   {id:'boss5', ico:'👑', name:'Derrota a 5 jefes', get:()=>S.m.boss, target:5, reward:{gems:15,gold:300}},
   {id:'depth10', ico:'🕳️', name:'Llega al piso 10 del Abismo', get:()=>S.abyss.best||0, target:10, reward:{gems:25,gold:400}}
 ];
@@ -929,7 +948,7 @@ function renderLifeStats(){
   const km=(LIFE.steps||0)*0.72/1000;
   const cells=[
     ['👣','Pasos totales', fmt(LIFE.steps||0), 'var(--cyan-b)'],
-    ['📅','Pasos hoy', fmt(S.steps||0), '#fff'],
+    ['📅','Pasos hoy', fmt(stepsToday()), '#fff'],
     ['📏','Distancia total', (km>=1?km.toFixed(1):km.toFixed(2))+' km', 'var(--green)'],
     ['👑','Jefes derrotados', fmt(LIFE.bosses||0), 'var(--gold)'],
     ['🕳️','Récord Abismo', 'Piso '+Math.max(S.abyss.best||0,LIFE.abyss||0), 'var(--violet)'],
@@ -1086,7 +1105,7 @@ function pickChoice(i){ const c=CHOICE[i]; if(!c)return; c.act(); sfx('chest'); 
   flushLevel(()=>{ if(S.dg){ S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); S.dg=null; } showToast('👑','LEG','¡Región completada!','Elegiste: '+c.t); go('mapa'); }); }
 function nextGoal(){
   if(!S.tutorialDone) return '';
-  if(S.steps<S.stepGoal) return '🎯 Te faltan '+fmt(S.stepGoal-S.steps)+' pasos para el cofre diario';
+  if(stepsToday()<S.stepGoal) return '🎯 Te faltan '+fmt(S.stepGoal-stepsToday())+' pasos para el cofre diario';
   if(S.level<3) return '🎯 Sube a nivel 3 para desbloquear la Forja';
   if(S.level<5) return '🎯 Sube a nivel 5 para desbloquear la Arena';
   if(!S.cleared[0]) return '🎯 Derrota al 1er jefe para desbloquear el Abismo';
@@ -1116,13 +1135,26 @@ function refreshUI(){
 }
 const STEP_STRIDE=100;   // 100 pasos = 1 avance (base)
 function strideCost(d){ if(!d)return STEP_STRIDE; const diff=d.abyss?(d.floor||1):(d.r.minLv||1); return Math.round(STEP_STRIDE*Math.pow(diff,1.6)); }  // curva de potencia: zonas difíciles cuestan MUCHÍSIMO más
+/* ---------- racha diaria (motor de retención) ---------- */
+function stepsToday(){ return Math.max(0, S.steps-(S.dayStart||0)); }
+const STREAK_MILES=[3,7,14,30,60,100];
+const STREAK_BONUS={3:15,7:30,14:60,30:120,60:250,100:500};
+function dailyReward(st){ return { gold:100+st*25, gems:5+Math.min(15,Math.floor(st/2)) }; }
+function nextMilestone(st){ return STREAK_MILES.find(m=>m>st)||null; }
 function checkDailyGoal(){
-  if(!S.goalDone && S.steps>=S.stepGoal){
-    S.goalDone=true; S.streak=(S.streak||0)+1;
-    const g=6+Math.floor(Math.random()*6); S.gems+=g; S.gold+=120;
-    sfx('chest');
-    showToast('🎁','LEG','¡Meta diaria cumplida!','+120 🪙 · +'+g+' 💎 · racha 🔥 '+S.streak);
+  if(!S.goalDone && stepsToday()>=S.stepGoal){
+    S.goalDone=true; S.streak=(S.streak||0)+1; const st=S.streak;
+    const rw=dailyReward(st); S.gold+=rw.gold; S.gems+=rw.gems;
+    let hit=''; if(STREAK_MILES.includes(st)){ const b=STREAK_BONUS[st]; S.gems+=b; hit=' · 🏅 HITO '+st+' días +'+b+'💎'; }
+    sfx(hit?'legend':'chest'); if(hit){flashFx();}
+    showToast('🎁','LEG','¡Meta diaria! Racha 🔥 '+st,'+'+rw.gold+' 🪙 · +'+rw.gems+' 💎'+hit);
   }
+}
+function newDay(){   // (demo) simula el cambio de día: la racha solo se conserva si cumpliste la meta
+  if(S.goalDone){ S.dayStart=S.steps; S.goalDone=false; refreshUI();
+    showToast('🌙','EPICA','Nuevo día · racha 🔥 '+S.streak,'Cumple la meta para subirla y mejorar el cofre'); }
+  else { const had=S.streak||0; S.streak=0; S.dayStart=S.steps; refreshUI();
+    showToast('💔','RARA', had>1?('Racha perdida ('+had+' días)'):'Nuevo día', 'No cumpliste la meta. Camina y no la pierdas hoy'); }
 }
 function simSteps(n){
   S.steps+=n; lifeAddSteps(n);
@@ -1178,6 +1210,7 @@ function renderMap(){
 
 /* ---------- mazmorra: EXPEDICIÓN AUTOMÁTICA (avanza con los pasos) + jefe manual ---------- */
 const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Rata gigante','🐀'],['Golem menor','🪨']];
+function setSceneZone(r,abyss){ const sc=$('walk-scene'); if(!sc)return; sc.dataset.zone = abyss?'abyss':({0:'forest',1:'caves',2:'ruins',3:'throne'}[r&&r.id]||'forest'); }
 function pauseDungeon(){ const d=S.dg; if(!d)return; // congela animaciones y timers pero CONSERVA el progreso
   d.paused=true;
   if(d.timer){clearTimeout(d.timer);d.timer=null;} d.running=false;
@@ -1194,7 +1227,7 @@ function resumeDungeon(){   // volver a la expedición en curso, justo donde est
   if(d.phase==='down'||d.phase==='dead'){ d.phase='auto'; d.enemy=null; }   // normaliza estados transitorios si saliste justo en ellos
   const r=d.r;
   $('dg-title').textContent=d.abyss?('Abismo · Piso '+d.floor):r.name;
-  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,d.abyss);
   $('walk-scene').classList.toggle('rage', (d.rageActive||0)>0);
   go('dungeon'); updateExpUI(); updateRageUI();
   if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} d.menu='main'; showCombat(); renderCombat(); }
@@ -1207,7 +1240,7 @@ function enterDungeon(r){
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
   $('dg-title').textContent=r.name;
   $('walk-scene').style.setProperty('--zone', r.color);
-  $('dg-arena').style.setProperty('--zone', r.color);
+  $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,false);
   $('walk-scene').classList.remove('rage');
   $('exp-feed').innerHTML='';
   go('dungeon'); showWalk(); updateExpUI(); updateRageUI();
@@ -1235,7 +1268,7 @@ function enterAbyss(){
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0,abyss:true,floor:floor};
   if((S.abyss.best||0)<1) S.abyss.best=0;
   $('dg-title').textContent='Abismo · Piso '+floor;
-  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,true);
   $('walk-scene').classList.remove('rage'); $('exp-feed').innerHTML='';
   go('dungeon'); showWalk(); updateExpUI(); updateRageUI();
   const saved=S.savedSteps||0;
@@ -1249,7 +1282,7 @@ function nextAbyssFloor(){
   d.r=r; d.idx=0; d.total=r.rooms; d.phase='auto'; d.enemy=null; d.turns=0; d.telegraph=false;
   $('dg-arena').classList.remove('boss'); $('en-sprite').classList.remove('charging');
   $('dg-title').textContent='Abismo · Piso '+d.floor;
-  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,true);
   showWalk(); $('walk-log').innerHTML='⬇️ <b>Piso '+d.floor+'</b>. Más profundo, más botín.';
   updateExpUI();
   showToast('🕳️','LEG','¡Piso '+d.floor+'!','Sigues descendiendo · récord '+S.abyss.best);
@@ -1479,7 +1512,8 @@ function enemyStrike(){
   const e=d.enemy; if(!e||e.hp<=0||d.phase!=='combat')return;
   if(d.dodge)return;
   const dmg=Math.max(1,Math.round(e.atk*(0.8+Math.random()*0.4)-totalStat('resistencia')*0.7));
-  S.hp-=dmg; renderCombat(); sfx('hurt');
+  const es=$('en-sprite'); if(es){ es.classList.add('atk'); setTimeout(()=>es.classList.remove('atk'),420); }   // el enemigo se lanza al golpear
+  S.hp-=dmg; renderCombat(); sfx('hurt'); shake();
   if(S.hp<=0){playerDown();return;}
   if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ startDodge(); } }
 }
