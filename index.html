@@ -43,7 +43,7 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .btn.gold{background:linear-gradient(90deg,var(--gold),#ffe08a);color:#2a1e00;box-shadow:0 0 18px rgba(245,196,81,.4)}
 .btn.red{background:linear-gradient(90deg,var(--red),#ff8fa3);color:#2a0008;box-shadow:0 0 18px rgba(255,77,109,.4)}
 .btn:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
-.card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:12px}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.012));border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 3px 12px rgba(0,0,0,.22)}
 .h{font-family:'Orbitron';font-size:11px;color:var(--cyan-b);letter-spacing:1px;text-transform:uppercase;margin-bottom:7px}
 .bar{height:9px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden}
 .bar>i{display:block;height:100%;border-radius:6px;transition:width .5s}
@@ -66,7 +66,8 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 
 /* ring */
 .ringw{display:flex;justify-content:center;margin:4px 0}
-.ring{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 0 26px rgba(63,180,255,.3)}
+.ring{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:ringGlow 3.4s ease-in-out infinite}
+@keyframes ringGlow{0%,100%{box-shadow:0 0 22px rgba(63,180,255,.28)}50%{box-shadow:0 0 38px rgba(63,180,255,.52)}}
 .ring .in{width:104px;height:104px;border-radius:50%;background:#0a1020;display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid rgba(63,180,255,.2)}
 .ring .lb{font-size:10px;color:var(--muted);letter-spacing:2px;font-family:'Orbitron'}
 .ring .lv{font-family:'Orbitron';font-weight:900;font-size:40px;color:#fff;text-shadow:0 0 14px rgba(63,180,255,.8);line-height:1}
@@ -96,8 +97,8 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .field .lab{font-family:'Orbitron';font-size:11px;color:var(--cyan-b);letter-spacing:1px;margin-bottom:6px}
 
 /* today */
-.today{background:rgba(56,229,160,.06);border:1px solid rgba(56,229,160,.25);border-radius:12px;padding:11px;text-align:center}
-.today .big{font-family:'Orbitron';font-weight:900;font-size:28px;color:var(--green);line-height:1}
+.today{background:linear-gradient(180deg,rgba(56,229,160,.10),rgba(56,229,160,.03));border:1px solid rgba(56,229,160,.28);border-radius:12px;padding:11px;text-align:center;box-shadow:0 0 24px rgba(56,229,160,.09) inset,0 3px 12px rgba(0,0,0,.2)}
+.today .big{font-family:'Orbitron';font-weight:900;font-size:28px;color:var(--green);line-height:1;text-shadow:0 0 20px rgba(56,229,160,.5)}
 .today .lb{font-size:11px;color:var(--muted);letter-spacing:1px}
 .today .conv{display:flex;justify-content:center;gap:10px;margin-top:7px;font-family:'Orbitron';font-size:10.5px;flex-wrap:wrap}
 .dq .r{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
@@ -422,6 +423,22 @@ canvas.cv-pixel{image-rendering:pixelated}
 .relic .rbuy{font-family:'Orbitron';font-size:11px;border:1px solid rgba(201,162,255,.5);background:rgba(201,162,255,.14);color:#c9a2ff;border-radius:9px;padding:9px 11px;cursor:pointer;flex:none}
 .relic .rbuy.dis{opacity:.4;cursor:default}
 .relic .rmax{font-family:'Orbitron';font-size:10px;color:var(--green);flex:none;padding:0 8px}
+/* ===== Ascensión: tarjeta base + estado PREMIO cuando puedes Renacer ===== */
+#home-asc{border-color:rgba(201,162,255,.4);background:rgba(201,162,255,.06)}
+#home-asc .ascico{display:inline-block}
+#home-asc.asc-ready{position:relative;overflow:hidden;border:1px solid transparent;
+  background:linear-gradient(120deg,rgba(201,162,255,.18),rgba(245,196,81,.14));
+  animation:ascGlow 2.2s ease-in-out infinite}
+@keyframes ascGlow{0%,100%{box-shadow:0 0 14px rgba(201,162,255,.35),inset 0 0 0 1px rgba(201,162,255,.55)}
+  50%{box-shadow:0 0 30px rgba(245,196,81,.6),inset 0 0 0 1px rgba(245,196,81,.75)}}
+#home-asc.asc-ready::after{content:'';position:absolute;top:0;left:-70%;width:48%;height:100%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.4),transparent);transform:skewX(-18deg);
+  animation:ascShine 2.9s ease-in-out infinite;pointer-events:none}
+@keyframes ascShine{0%{left:-70%}60%{left:140%}100%{left:140%}}
+#home-asc.asc-ready .ascico{animation:ascStar 2.2s ease-in-out infinite}
+@keyframes ascStar{0%,100%{transform:scale(1) rotate(0)}50%{transform:scale(1.28) rotate(12deg)}}
+#home-asc.asc-ready .h{color:#ffe08a;text-shadow:0 0 12px rgba(245,196,81,.6)}
+#asc-renacer.gold{animation:ascGlow 2s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -507,8 +524,8 @@ canvas.cv-pixel{image-rendering:pixelated}
         <div class="card" onclick="go('retos')" style="cursor:pointer">
           <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)"><span id="retos-sum"></span> ▸</span></div>
         </div>
-        <div class="card" id="home-asc" onclick="openAscension()" style="cursor:pointer;display:none;border-color:rgba(201,162,255,.45);background:rgba(201,162,255,.06)">
-          <div class="row"><span class="h" style="margin:0">🌟 Ascensión</span><span class="mono" style="font-size:11px;color:#c9a2ff"><span id="home-asc-sum"></span> ▸</span></div>
+        <div class="card" id="home-asc" onclick="openAscension()" style="cursor:pointer;display:none">
+          <div class="row"><span class="h" style="margin:0"><span class="ascico">🌟</span> <span id="home-asc-title">Ascensión</span></span><span class="mono" style="font-size:11px;color:#c9a2ff"><span id="home-asc-sum"></span> ▸</span></div>
         </div>
         <div id="home-nudge" style="text-align:center;font-size:12.5px;color:var(--gold);margin:2px 0 8px;font-weight:600"></div>
         <button id="home-cta" class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
@@ -747,7 +764,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v23 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v24 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -977,7 +994,10 @@ function renderHome(){
   const ng=$('home-nudge'); if(ng)ng.textContent=nextGoal();
   const rs=$('retos-sum'); if(rs){ const am=MISSIONS.filter(m=>!S.mClaimed[m.id]).length; const rl=ACHIEVS.filter(a=>!S.aClaimed[a.id]&&a.get()>=a.target).length; rs.textContent=am+' misiones'+(rl?' · '+rl+' logro'+(rl>1?'s':'')+' ✓':''); }
   const ha=$('home-asc'); if(ha){ const show=canAscend()||(ASC.count||0)>0; ha.style.display=show?'block':'none';
-    if(show){ const parts=[]; if(ASC.count>0)parts.push('Asc '+ASC.count); if((ASC.esencia||0)>0)parts.push('🔮'+ASC.esencia); if(canAscend())parts.push('¡puedes Renacer!'); $('home-asc-sum').textContent=parts.join(' · ')||'ver'; } }
+    if(show){ const ready=canAscend(); ha.classList.toggle('asc-ready',ready);
+      const tt=$('home-asc-title'); if(tt)tt.textContent=ready?'¡ASCENSIÓN DISPONIBLE!':'Ascensión';
+      const parts=[]; if(ASC.count>0)parts.push('Asc '+ASC.count); if((ASC.esencia||0)>0)parts.push('🔮'+ASC.esencia);
+      $('home-asc-sum').textContent = ready?'Renace y hazte más fuerte':(parts.join(' · ')||'ver'); } }
   const cta=$('home-cta');
   if(cta){ if(S.dg){ cta.innerHTML='▶ CONTINUAR EXPEDICIÓN'; cta.setAttribute('onclick','resumeDungeon()'); cta.classList.remove('violet'); cta.classList.add('gold'); }
     else { cta.innerHTML='🗺️ ABRIR MAPA / EXPEDICIÓN'; cta.setAttribute('onclick',"go('mapa')"); cta.classList.remove('gold'); cta.classList.add('violet'); } }
