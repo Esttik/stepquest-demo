@@ -764,7 +764,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v24 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v25 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -781,7 +781,7 @@ const S = {
   cos:{royal:false,shadow:false,dragon:false}, skin:'none', petOn:false,
   inventory:[],
   screen:'onboarding',
-  cleared:{}, shopMode:'buy',
+  cleared:{}, shopMode:'buy', potions:{0:3,1:1},
   m:{kills:0,loot:0,boss:0,gold:0}, mClaimed:{}, aClaimed:{},
   arena:{trophies:0,wins:0,losses:0,opps:null,board:null},
   abyss:{best:0},
@@ -836,7 +836,7 @@ function renacer(){
   S.level=1; S.exp=0; S.expMax=100; S.points=0;
   S.stats={fuerza:10,agilidad:8,vitalidad:12,resistencia:9,suerte:5};
   S.equipped={ yelmo:null, pechera:{name:'Armadura vieja',rar:'comun',ico:'🧥',slot:'pechera',resistencia:2}, guantes:null, botas:null, amuleto:null, arma:{name:'Espada gastada',rar:'comun',ico:'🗡️',slot:'arma',fuerza:2}, escudo:null, anillo:null };
-  S.inventory=[]; S.cleared={}; S.gold=0; S.savedSteps=0;
+  S.inventory=[]; S.cleared={}; S.gold=0; S.savedSteps=0; S.potions={0:3,1:1};
   S.m={kills:0,loot:0,boss:0,gold:0};
   S.hpMax=computeHpMax(); S.hp=S.hpMax;
   closeAscension(); go('home'); flashFx(); sfx('legend');
@@ -1357,7 +1357,7 @@ function enterDungeon(r){
   if(S.dg){ if(!S.dg.abyss && S.dg.r && S.dg.r.id===r.id){ resumeDungeon(); return; }   // misma zona en curso -> continuar
     pauseDungeon(); S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); }      // abandonas otra expedición -> devuelve su energía
   S.hpMax=computeHpMax(); S.hp=S.hpMax;
-  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
+  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
   $('dg-title').textContent=r.name;
   $('walk-scene').style.setProperty('--zone', r.color);
   $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,false);
@@ -1385,7 +1385,7 @@ function enterAbyss(){
   const floor=1;
   S.hpMax=computeHpMax(); S.hp=S.hpMax;
   const r=abyssRegion(floor);
-  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0,abyss:true,floor:floor};
+  S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0,abyss:true,floor:floor};
   if((S.abyss.best||0)<1) S.abyss.best=0;
   $('dg-title').textContent='Abismo · Piso '+floor;
   $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,true);
@@ -1563,10 +1563,10 @@ function renderCmd(){
     h+='<button class="cmd-back" onclick="backMenu()">◀ Volver</button></div>';
   } else if(d.menu==='objeto'){
     h='<div class="submenu">'; let any=false;
-    ITEMS.forEach((it,i)=>{ const n=d.items[i]||0; if(n<=0)return; any=true;
+    ITEMS.forEach((it,i)=>{ const n=(S.potions&&S.potions[i])||0; if(n<=0)return; any=true;
       h+='<button class="cmd-line'+(busy?' dis':'')+'" '+(busy?'disabled':'onclick="useItemI('+i+')"')+'><span>'+it.ico+' '+it.name+' ×'+n+'</span><span class="cmd-meta">'+it.tag+'</span></button>';
     });
-    if(!any) h+='<div class="mut" style="text-align:center;padding:8px">No te quedan objetos.</div>';
+    if(!any) h+='<div class="mut" style="text-align:center;padding:8px">No te quedan pociones.<br>Cómpralas en la 🏪 Tienda.</div>';
     h+='<button class="cmd-back" onclick="backMenu()">◀ Volver</button></div>';
   } else {
     const lock=!!d.turnLock;
@@ -1614,8 +1614,8 @@ function useSkill(i){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dod
   d.turnLock=true; tickCds(); d.menu='main';
   if(s.hits) doDamageMulti(s.mult,s.hits,'✨ '+s.name+':'); else doDamage(s.mult,'✨ '+s.name+' —');
   d.cd[i]=s.cd; }
-function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge||(d.items[i]||0)<=0)return; const it=ITEMS[i];
-  d.turnLock=true; tickCds(); d.items[i]--; d.menu='main';
+function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge||((S.potions&&S.potions[i])||0)<=0)return; const it=ITEMS[i];
+  d.turnLock=true; tickCds(); S.potions[i]=(S.potions[i]||0)-1; d.menu='main';
   if(it.heal){ const heal=Math.round(S.hpMax*it.heal); S.hp=Math.min(S.hpMax,S.hp+heal);
     $('dg-log').innerHTML='🧪 Usas <b>'+it.name+'</b> · <b style="color:var(--green)">+'+heal+' vida</b>'; renderCombat(); cbtDelay(enemyStrike,560); }
   else if(it.dmg){ const e=d.enemy; e.hp-=it.dmg; floatDmg(it.dmg,false);
@@ -1980,6 +1980,13 @@ const SHOP=[
 ];
 const bought={};
 const SELLPRICE={comun:8,rara:25,epica:70,leg:180};
+const POTIONSHOP=[ {i:0, gold:70}, {i:1, gold:110} ];   // Poción / Bomba, se compran con oro
+function buyPotion(i,cost){
+  if(S.gold<cost){ showToast('🪙','ORO','Te falta oro','Necesitas '+cost+' 🪙 · consíguelo en las expediciones'); return; }
+  S.gold-=cost; S.potions[i]=(S.potions[i]||0)+1;
+  sfx('coin'); showToast(ITEMS[i].ico,'COMPRA','Comprado: '+ITEMS[i].name,'Tienes '+S.potions[i]+' · úsala en combate con 🎒');
+  renderShop();
+}
 function setShopMode(m){ S.shopMode=m; renderShop(); }
 function renderShop(){
   $('shop-gems').textContent=S.gems; $('shop-gold').textContent=fmt(S.gold);
@@ -1989,7 +1996,27 @@ function renderShop(){
   const el=$('shop');
   if(S.shopMode==='sell'){ renderSell(el); return; }
   if(S.shopMode==='forge'){ renderForge(el); return; }
-  el.className='grid2'; el.style.display='grid'; el.innerHTML='';
+  el.className=''; el.style.display='block'; el.innerHTML='';
+  /* ---- Pociones (se compran con ORO y se conservan para tus expediciones) ---- */
+  const pot=document.createElement('div');
+  pot.innerHTML='<div class="sec-title" style="font-size:13px;margin:2px 0 7px">🧪 Pociones de combate</div>'+
+    '<div class="mut" style="font-size:10.5px;margin-bottom:8px">Se conservan entre expediciones. Úsalas en combate con 🎒 Objeto.</div>';
+  const pgrid=document.createElement('div'); pgrid.className='grid2'; pgrid.style.display='grid';
+  POTIONSHOP.forEach(ps=>{ const it=ITEMS[ps.i], have=(S.potions&&S.potions[ps.i])||0, aff=S.gold>=ps.gold;
+    const c=document.createElement('div'); c.className='shopitem';
+    c.innerHTML='<div class="ico">'+it.ico+'</div><div class="n">'+it.name+'</div>'+
+      '<div class="mut" style="font-size:10px;margin-bottom:6px">'+it.tag+' · tienes <b style="color:var(--cyan-b)">'+have+'</b></div>'+
+      '<button class="buy'+(aff?'':' bought')+'">🪙 '+ps.gold+'</button>';
+    c.querySelector('.buy').onclick=()=>buyPotion(ps.i,ps.gold);
+    pgrid.appendChild(c); });
+  pot.appendChild(pgrid);
+  el.appendChild(pot);
+  /* ---- Aspectos / mascota (gemas) ---- */
+  const cos=document.createElement('div');
+  cos.innerHTML='<div class="sec-title" style="font-size:13px;margin:16px 0 7px">✨ Aspectos y mascota</div>';
+  el.appendChild(cos);
+  const grid=document.createElement('div'); grid.className='grid2'; grid.style.display='grid';
+  cos.appendChild(grid);
   SHOP.forEach((it,i)=>{
     const d=document.createElement('div'); d.className='shopitem';
     d.innerHTML='<div class="ico">'+it.ico+'</div><div class="n">'+it.n+'</div>'+
@@ -2004,7 +2031,7 @@ function renderShop(){
       if(it.n.includes('Dragón')){ S.cos.dragon=true; S.petOn=true; showToast('🐲','EPICA','¡Mascota obtenida!','Dragón · te acompaña en 🛡️ Héroe'); }
       renderShop();
     };
-    el.appendChild(d);
+    grid.appendChild(d);
   });
 }
 function renderSell(el){
