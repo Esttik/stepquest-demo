@@ -708,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v17 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v18 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1451,19 +1451,25 @@ function startDodge(){
   const span=Math.max(8, 100-2*d.zoneHalf-12);      // mantener la zona dentro de la barra
   d.zoneC=d.zoneHalf+6+Math.random()*span;
   d.dodgeDir=1; d.dodgePos=Math.random()*100;
-  // VELOCIDAD progresiva: sube con el nivel del enemigo, baja (te ayuda) con tu agilidad
-  const spd=1.5*(1+Math.min(1.6, lv*0.06))*Math.max(0.65, 1-agi*0.006);
+  // VELOCIDAD progresiva por TIEMPO (igual en 60Hz y 120Hz): sube con el nivel del enemigo, baja (te ayuda) con tu agilidad
+  const vps=120*(1+Math.min(1.6, lv*0.06))*Math.max(0.72, 1-agi*0.005);   // unidades (%) por segundo
+  // ventana que GARANTIZA >=2 recorridos completos de ida y vuelta antes de fallar
+  const winMs=Math.max(2600, Math.min(4500, Math.round((500/vps)*1000)));
   $('en-sprite').classList.add('charging'); sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
   renderCmd();
-  (function loop(){
+  let last=null;
+  function loop(ts){
     if(!S.dg||!S.dg.dodge)return;
-    d.dodgePos+=d.dodgeDir*spd;
+    if(last==null){ last=ts; d.dodgeRAF=requestAnimationFrame(loop); return; }   // primer frame: fija el reloj
+    const dt=Math.min(0.05,(ts-last)/1000); last=ts;   // segundos; cap por si la pestaña se congela
+    d.dodgePos+=d.dodgeDir*vps*dt;
     if(d.dodgePos>=100){d.dodgePos=100;d.dodgeDir=-1;} else if(d.dodgePos<=0){d.dodgePos=0;d.dodgeDir=1;}
     const m=$('dodge-marker'); if(m)m.style.left=d.dodgePos+'%';
     d.dodgeRAF=requestAnimationFrame(loop);
-  })();
-  d.dodgeTO=setTimeout(()=>{ if(S.dg&&S.dg.dodge) resolveDodge(false); }, 3000);
+  }
+  d.dodgeRAF=requestAnimationFrame(loop);
+  d.dodgeTO=setTimeout(()=>{ if(S.dg&&S.dg.dodge) resolveDodge(false); }, winMs);
 }
 function dodgeTap(){
   const d=S.dg; if(!d||!d.dodge)return;
