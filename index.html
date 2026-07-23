@@ -413,6 +413,15 @@ h1.title{font-family:'Orbitron';font-weight:900;font-size:26px;letter-spacing:1p
 .lpc-load .sp{width:13px;height:13px;border:2px solid rgba(63,180,255,.25);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 canvas.cv-pixel{image-rendering:pixelated}
+/* ===== Ascensión / Reliquias ===== */
+.relic{display:flex;align-items:center;gap:9px;background:rgba(201,162,255,.05);border:1px solid rgba(201,162,255,.22);border-radius:11px;padding:8px 10px}
+.relic .rico{font-size:22px;width:30px;text-align:center;flex:none}
+.relic .rbody{flex:1;min-width:0;text-align:left}
+.relic .rn{font-size:12.5px;font-weight:700;color:#e8eefc}
+.relic .rmeta{font-size:10.5px;color:var(--muted);margin-top:1px}
+.relic .rbuy{font-family:'Orbitron';font-size:11px;border:1px solid rgba(201,162,255,.5);background:rgba(201,162,255,.14);color:#c9a2ff;border-radius:9px;padding:9px 11px;cursor:pointer;flex:none}
+.relic .rbuy.dis{opacity:.4;cursor:default}
+.relic .rmax{font-family:'Orbitron';font-size:10px;color:var(--green);flex:none;padding:0 8px}
 </style>
 </head>
 <body>
@@ -497,6 +506,9 @@ canvas.cv-pixel{image-rendering:pixelated}
         </div>
         <div class="card" onclick="go('retos')" style="cursor:pointer">
           <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)"><span id="retos-sum"></span> ▸</span></div>
+        </div>
+        <div class="card" id="home-asc" onclick="openAscension()" style="cursor:pointer;display:none;border-color:rgba(201,162,255,.45);background:rgba(201,162,255,.06)">
+          <div class="row"><span class="h" style="margin:0">🌟 Ascensión</span><span class="mono" style="font-size:11px;color:#c9a2ff"><span id="home-asc-sum"></span> ▸</span></div>
         </div>
         <div id="home-nudge" style="text-align:center;font-size:12.5px;color:var(--gold);margin:2px 0 8px;font-weight:600"></div>
         <button id="home-cta" class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
@@ -584,7 +596,7 @@ canvas.cv-pixel{image-rendering:pixelated}
 
       <!-- PERSONAJE (paper doll) -->
       <div class="screen" id="s-personaje">
-        <div class="row"><div class="sec-title">🛡️ Héroe</div><span class="mono" style="font-size:11px;color:var(--violet)">Puntos: <b id="pts">0</b></span></div>
+        <div class="row"><div class="sec-title">🛡️ Héroe</div><span class="mono" style="font-size:11px;color:var(--violet)">⚡ Poder <b id="hero-power" style="color:var(--gold)">0</b> · Puntos: <b id="pts">0</b></span></div>
         <div class="doll">
           <div class="slotcol">
             <div class="eqslot" data-slot="yelmo" onclick="openSlot('yelmo')"></div>
@@ -693,9 +705,21 @@ canvas.cv-pixel{image-rendering:pixelated}
       <div class="sys mono" style="color:var(--cyan-b);letter-spacing:3px;font-size:12px">◈ AJUSTES ◈</div>
       <div style="display:flex;flex-direction:column;gap:10px;width:100%;padding:0 8px;margin-top:10px">
         <button class="btn ghost" style="width:100%" onclick="toggleMute()"><span id="set-sound">🔊 Sonido: ON</span></button>
-        <button class="btn ghost" style="width:100%" onclick="location.reload()">🔄 Reiniciar demo</button>
+        <button class="btn ghost" style="width:100%" onclick="fullReset()">🔄 Reiniciar demo</button>
       </div>
       <button class="btn" style="width:70%;margin-top:12px" onclick="closeSettings()">CERRAR</button>
+    </div>
+    <div class="overlay" id="asc-ov">
+      <div class="sys mono" style="color:#c9a2ff;letter-spacing:3px;font-size:12px">◈ ASCENSIÓN ◈</div>
+      <div style="display:flex;gap:16px;justify-content:center;margin:2px 0 6px">
+        <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:800;color:#c9a2ff"><span id="asc-esencia">0</span></div><div class="mut" style="font-size:9px;letter-spacing:.5px">🔮 ESENCIA</div></div>
+        <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:800;color:var(--gold)"><span id="asc-power">0</span></div><div class="mut" style="font-size:9px;letter-spacing:.5px">⚡ PODER</div></div>
+        <div style="text-align:center"><div class="mono" style="font-size:22px;font-weight:800;color:#fff"><span id="asc-count">0</span></div><div class="mut" style="font-size:9px;letter-spacing:.5px">🌟 RENACERES</div></div>
+      </div>
+      <div class="mut" style="font-size:11px;text-align:center;margin-bottom:6px;padding:0 6px">Las Reliquias son <b style="color:#c9a2ff">permanentes</b>: te fortalecen en cada vida. Gana 🔮 Esencia al Renacer.</div>
+      <div id="asc-relics" style="display:flex;flex-direction:column;gap:7px;width:100%;max-height:210px;overflow-y:auto;padding:0 2px"></div>
+      <button class="btn dis" id="asc-renacer" style="width:100%;margin-top:10px">🔒 Renacer</button>
+      <button class="btn ghost" style="width:70%;margin-top:8px" onclick="closeAscension()">CERRAR</button>
     </div>
 
     <!-- bottom nav -->
@@ -718,12 +742,12 @@ canvas.cv-pixel{image-rendering:pixelated}
       <button onclick="simSteps(5000)">🏃 +5.000 pasos</button>
       <button onclick="simAway(4000)">🌙 Volver tras caminar (app cerrada)</button>
       <button onclick="newDay()">📅 Simular nuevo día</button>
-      <button class="reset" onclick="location.reload()">🔄 Reiniciar</button>
+      <button class="reset" onclick="fullReset()">🔄 Reiniciar</button>
     </div>
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v22 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v23 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -757,6 +781,80 @@ try{ const j=localStorage.getItem(LIFEKEY); if(j)LIFE=Object.assign(LIFE,JSON.pa
 let _lifeT=0;
 function saveLife(){ try{ localStorage.setItem(LIFEKEY,JSON.stringify(LIFE)); }catch(e){} }
 function lifeAddSteps(n){ LIFE.steps=(LIFE.steps||0)+n; if(!_lifeT){ _lifeT=setTimeout(()=>{_lifeT=0;saveLife();},800); } }   // guardado agrupado
+
+/* ============ ASCENSIÓN / PRESTIGIO (meta-progresión infinita, persistente) ============ */
+const ASCKEY='stepquest_asc_v1';
+let ASC={count:0, esencia:0, relics:{power:0,fortune:0,vigor:0,precision:0,impetus:0}};
+try{ const j=localStorage.getItem(ASCKEY); if(j){ const o=JSON.parse(j)||{}; ASC.count=o.count||0; ASC.esencia=o.esencia||0; ASC.relics=Object.assign(ASC.relics,o.relics||{}); } }catch(e){}
+function saveAsc(){ try{ localStorage.setItem(ASCKEY,JSON.stringify(ASC)); }catch(e){} }
+const RELICS=[
+  {id:'power',     ico:'⚔️', name:'Núcleo de Poder',   d:'daño en combate',        per:0.08, max:12},
+  {id:'fortune',   ico:'🍀', name:'Sello de Fortuna',  d:'oro y probabilidad de botín', per:0.10, max:12},
+  {id:'vigor',     ico:'❤️', name:'Corazón de Vigor',  d:'vida máxima',            per:0.08, max:12},
+  {id:'precision', ico:'🎯', name:'Ojo Certero',       d:'probabilidad de crítico', per:0.15, max:8},
+  {id:'impetus',   ico:'⚡', name:'Chispa de Ímpetu',  d:'carga de Furia',         per:0.15, max:8},
+];
+function relicDef(id){ return RELICS.find(r=>r.id===id); }
+function relicLv(id){ return ASC.relics[id]||0; }
+function relicBonus(id){ return relicLv(id)*relicDef(id).per; }
+function relicCost(id){ return 2+relicLv(id)*3; }   // coste en Esencia, escalado
+function relicMaxed(id){ return relicLv(id)>=relicDef(id).max; }
+/* multiplicadores que las Reliquias aplican a TODO el juego */
+function goldMult(){ return 1+relicBonus('fortune'); }
+function dmgMult(){ return 1+relicBonus('power'); }
+function critMult(){ return 1+relicBonus('precision'); }
+function rageMult(){ return 1+relicBonus('impetus'); }
+function computeHpMax(){ return Math.round((100+totalStat('vitalidad')*8)*(1+relicBonus('vigor'))); }
+/* Poder: número legible que resume tu fuerza total (stats+equipo+reliquias+ascensiones) */
+function powerScore(){ const base=totalStat('fuerza')*3+totalStat('agilidad')*2.2+totalStat('resistencia')*2+totalStat('vitalidad')*2+totalStat('suerte')*1.6;
+  return Math.round(base*(1+relicBonus('power')*0.6+relicBonus('vigor')*0.4+relicBonus('precision')*0.3)+ (ASC.count||0)*50); }
+function canAscend(){ return !!S.cleared[3] || S.level>=20; }   // superar la campaña (Trono) o nivel 20
+function esenciaGain(){ let c=0; for(let i=0;i<4;i++) if(S.cleared[i])c++;
+  return Math.max(1, c*4 + Math.floor(S.level/2) + (S.abyss.best||0) + (ASC.count||0)*2); }
+function renacer(){
+  if(!canAscend()){ showToast('🔒','RARA','Aún no puedes renacer','Supera el Trono del Monarca o alcanza nivel 20'); return; }
+  const gain=esenciaGain();
+  ASC.count=(ASC.count||0)+1; ASC.esencia=(ASC.esencia||0)+gain; saveAsc();
+  if(S.dg)S.dg=null;
+  S.level=1; S.exp=0; S.expMax=100; S.points=0;
+  S.stats={fuerza:10,agilidad:8,vitalidad:12,resistencia:9,suerte:5};
+  S.equipped={ yelmo:null, pechera:{name:'Armadura vieja',rar:'comun',ico:'🧥',slot:'pechera',resistencia:2}, guantes:null, botas:null, amuleto:null, arma:{name:'Espada gastada',rar:'comun',ico:'🗡️',slot:'arma',fuerza:2}, escudo:null, anillo:null };
+  S.inventory=[]; S.cleared={}; S.gold=0; S.savedSteps=0;
+  S.m={kills:0,loot:0,boss:0,gold:0};
+  S.hpMax=computeHpMax(); S.hp=S.hpMax;
+  closeAscension(); go('home'); flashFx(); sfx('legend');
+  showToast('🌟','LEG','¡HAS RENACIDO! · Ascensión '+ASC.count,'+'+gain+' Esencia · gástala en Reliquias permanentes');
+  refreshUnlocks();
+}
+function buyRelic(id){ const cost=relicCost(id);
+  if(relicMaxed(id)){ showToast('✨','RARA','Reliquia al máximo',relicDef(id).name); return; }
+  if((ASC.esencia||0)<cost){ showToast('🔮','RARA','Te falta Esencia','Necesitas '+cost+' · gana Esencia al Renacer'); return; }
+  ASC.esencia-=cost; ASC.relics[id]=(ASC.relics[id]||0)+1; saveAsc();
+  S.hpMax=computeHpMax(); if(!S.dg){S.hp=S.hpMax;} else if(S.hp>S.hpMax){S.hp=S.hpMax;}
+  sfx('level'); renderAscension(); refreshUI();
+}
+function openAscension(){ renderAscension(); $('asc-ov').classList.add('show'); }
+function closeAscension(){ $('asc-ov').classList.remove('show'); }
+function renderAscension(){
+  const es=$('asc-esencia'); if(es)es.textContent=ASC.esencia||0;
+  const ac=$('asc-count'); if(ac)ac.textContent=ASC.count||0;
+  const pw=$('asc-power'); if(pw)pw.textContent=fmt(powerScore());
+  const rb=$('asc-renacer'); if(rb){ const can=canAscend();
+    rb.innerHTML = can ? ('🌟 RENACER · +'+esenciaGain()+' Esencia') : '🔒 Supera el Trono o llega a nivel 20';
+    rb.className='btn'+(can?' gold':' dis'); rb.onclick = can?renacerConfirm:null; }
+  const list=$('asc-relics'); if(list){ list.innerHTML=RELICS.map(r=>{ const lv=relicLv(r.id), maxed=relicMaxed(r.id), cost=relicCost(r.id), aff=(ASC.esencia||0)>=cost;
+    return '<div class="relic"><div class="rico">'+r.ico+'</div>'+
+      '<div class="rbody"><div class="rn">'+r.name+' <span class="mut" style="font-size:10px">Nv '+lv+'/'+r.max+'</span></div>'+
+      '<div class="rmeta">+'+Math.round(relicBonus(r.id)*100)+'% '+r.d+(maxed?'':' · +'+Math.round(r.per*100)+'% siguiente')+'</div></div>'+
+      (maxed?'<span class="rmax">MÁX</span>':'<button class="rbuy'+(aff?'':' dis')+'"'+(aff?' onclick="buyRelic(\''+r.id+'\')"':' disabled')+'>🔮 '+cost+'</button>')+
+      '</div>'; }).join(''); }
+}
+let _rcArm=false;
+function renacerConfirm(){ if(!canAscend())return; const rb=$('asc-renacer');
+  if(!_rcArm){ _rcArm=true; rb.innerHTML='⚠️ Pulsa otra vez para RENACER'; rb.className='btn red';
+    setTimeout(()=>{ if(_rcArm){ _rcArm=false; renderAscension(); } },2800); return; }
+  _rcArm=false; renacer(); }
+function fullReset(){ try{ localStorage.removeItem(ASCKEY); localStorage.removeItem(LIFEKEY); }catch(e){} location.reload(); }
 function toggleDemo(){ document.querySelector('.demopanel').classList.toggle('open'); }
 /* ---------- sonido (WebAudio, sin archivos) + juice ---------- */
 let AC=null, MUTE=false;
@@ -878,6 +976,8 @@ function renderHome(){
   else { if(lbl)lbl.textContent='pasos sin gastar'; const fr=frontierRegion(); if(en)en.textContent=fr?fr.name:'Todo despejado ✓'; }
   const ng=$('home-nudge'); if(ng)ng.textContent=nextGoal();
   const rs=$('retos-sum'); if(rs){ const am=MISSIONS.filter(m=>!S.mClaimed[m.id]).length; const rl=ACHIEVS.filter(a=>!S.aClaimed[a.id]&&a.get()>=a.target).length; rs.textContent=am+' misiones'+(rl?' · '+rl+' logro'+(rl>1?'s':'')+' ✓':''); }
+  const ha=$('home-asc'); if(ha){ const show=canAscend()||(ASC.count||0)>0; ha.style.display=show?'block':'none';
+    if(show){ const parts=[]; if(ASC.count>0)parts.push('Asc '+ASC.count); if((ASC.esencia||0)>0)parts.push('🔮'+ASC.esencia); if(canAscend())parts.push('¡puedes Renacer!'); $('home-asc-sum').textContent=parts.join(' · ')||'ver'; } }
   const cta=$('home-cta');
   if(cta){ if(S.dg){ cta.innerHTML='▶ CONTINUAR EXPEDICIÓN'; cta.setAttribute('onclick','resumeDungeon()'); cta.classList.remove('violet'); cta.classList.add('gold'); }
     else { cta.innerHTML='🗺️ ABRIR MAPA / EXPEDICIÓN'; cta.setAttribute('onclick',"go('mapa')"); cta.classList.remove('gold'); cta.classList.add('violet'); } }
@@ -1223,7 +1323,7 @@ function leaveDungeon(){ pauseDungeon(); go('mapa'); }   // salir NO reinicia: l
 function resumeDungeon(){   // volver a la expedición en curso, justo donde estaba
   const d=S.dg; if(!d){ go('mapa'); return; }
   d.paused=false;
-  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax); if(S.hp<=0)S.hp=S.hpMax;   // reengancha vida al equipo actual
+  S.hpMax=computeHpMax(); S.hp=Math.min(S.hp,S.hpMax); if(S.hp<=0)S.hp=S.hpMax;   // reengancha vida al equipo actual
   if(d.phase==='down'||d.phase==='dead'){ d.phase='auto'; d.enemy=null; }   // normaliza estados transitorios si saliste justo en ellos
   const r=d.r;
   $('dg-title').textContent=d.abyss?('Abismo · Piso '+d.floor):r.name;
@@ -1236,7 +1336,7 @@ function resumeDungeon(){   // volver a la expedición en curso, justo donde est
 function enterDungeon(r){
   if(S.dg){ if(!S.dg.abyss && S.dg.r && S.dg.r.id===r.id){ resumeDungeon(); return; }   // misma zona en curso -> continuar
     pauseDungeon(); S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); }      // abandonas otra expedición -> devuelve su energía
-  S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
+  S.hpMax=computeHpMax(); S.hp=S.hpMax;
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
   $('dg-title').textContent=r.name;
   $('walk-scene').style.setProperty('--zone', r.color);
@@ -1263,7 +1363,7 @@ function enterAbyss(){
   if(S.dg){ if(S.dg.abyss){ resumeDungeon(); return; }   // ya estás en el Abismo -> continuar
     pauseDungeon(); S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); }
   const floor=1;
-  S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
+  S.hpMax=computeHpMax(); S.hp=S.hpMax;
   const r=abyssRegion(floor);
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0,abyss:true,floor:floor};
   if((S.abyss.best||0)<1) S.abyss.best=0;
@@ -1358,13 +1458,13 @@ function roomEvent(){
     const dmg=rage?Math.round(raw*0.35):Math.max(0,raw-Math.round(totalStat('resistencia')*0.6));
     S.hp-=dmg;
     if(S.hp<=0){ sfx('lose'); shake(); pushFeed('💀',null,'Te supera '+mob[0]+' '+mob[1],'Has caído en la expedición'); failExpedition(); return; }
-    const xp=(base*7+8)*mult, gold=(8+Math.floor(Math.random()*12)+base)*mult;
+    const xp=(base*7+8)*mult, gold=Math.round((8+Math.floor(Math.random()*12)+base)*mult*goldMult());
     S.gold+=gold; gainXP(xp); S.m.kills++; S.m.gold+=gold;
     sfx('hit'); popFx('+'+gold+' 🪙','#f5c451',18); coinFly();
     pushFeed('⚔️',null,tag+'Vences a '+mob[0]+' '+mob[1],'+'+gold+' 🪙 · +'+xp+' XP'+(dmg>0?' · −'+dmg+'❤':''));
-    if(Math.random()<(rage?0.4:0.13)+totalStat('suerte')*0.004){ const it=makeItem(rage||Math.random()<0.22); S.m.loot++; pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); lootFx(it); }
+    if(Math.random()<(rage?0.4:0.13)+totalStat('suerte')*0.004+relicBonus('fortune')*0.15){ const it=makeItem(rage||Math.random()<0.22); S.m.loot++; pushFeed(it.ico,it.rar,'¡Botín! '+it.name,statText(it)); lootFx(it); }
   } else if(roll<0.82){
-    const gold=(14+Math.floor(Math.random()*20)+base*2)*mult; S.gold+=gold; S.m.gold+=gold;
+    const gold=Math.round((14+Math.floor(Math.random()*20)+base*2)*mult*goldMult()); S.gold+=gold; S.m.gold+=gold;
     sfx('coin'); popFx('+'+gold+' 🪙','#f5c451',20); coinFly();
     pushFeed('💰',null,tag+'Tesoro encontrado','+'+gold+' 🪙');
   } else {
@@ -1372,7 +1472,7 @@ function roomEvent(){
     else { const g=(1+Math.floor(Math.random()*3))*mult; S.gems+=g; sfx('chest'); popFx('+'+g+' 💎','#a78bfa',20); pushFeed('🎁','epica',tag+'Cofre de gemas','+'+g+' 💎'); d.pauseNext=900; }
   }
   if(d.rageActive>0){ d.rageActive--; if(d.rageActive===0)$('walk-scene').classList.remove('rage'); }
-  else { d.rage=Math.min(100,(d.rage||0)+22); }
+  else { d.rage=Math.min(100,(d.rage||0)+22*rageMult()); }
   updateRageUI();
 }
 function failExpedition(){
@@ -1469,9 +1569,9 @@ function floatDmg(dmg,crit){
 }
 function doDamage(mult,label){
   const e=S.dg.enemy; if(!e)return;
-  const critChance=totalStat('agilidad')*0.9+totalStat('suerte')*0.6;
+  const critChance=(totalStat('agilidad')*0.9+totalStat('suerte')*0.6)*critMult();
   const crit=Math.random()*100<critChance;
-  const dmg=Math.round((totalStat('fuerza')*2+6)*mult*(crit?1.9:1)*(0.85+Math.random()*0.3));
+  const dmg=Math.round((totalStat('fuerza')*2+6)*mult*(crit?1.9:1)*(0.85+Math.random()*0.3)*dmgMult());
   e.hp-=dmg; floatDmg(dmg,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+dmg+'</b>'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
@@ -1480,8 +1580,8 @@ function doDamage(mult,label){
 function doDamageMulti(mult,hits,label){
   const e=S.dg.enemy; if(!e)return;
   let total=0,crit=false;
-  for(let k=0;k<hits;k++){ const c=Math.random()*100<(totalStat('agilidad')*0.9+totalStat('suerte')*0.6); if(c)crit=true;
-    total+=Math.round((totalStat('fuerza')*2+6)*mult*(c?1.9:1)*(0.85+Math.random()*0.3)); }
+  for(let k=0;k<hits;k++){ const c=Math.random()*100<(totalStat('agilidad')*0.9+totalStat('suerte')*0.6)*critMult(); if(c)crit=true;
+    total+=Math.round((totalStat('fuerza')*2+6)*mult*(c?1.9:1)*(0.85+Math.random()*0.3)*dmgMult()); }
   e.hp-=total; floatDmg(total,crit); heroLunge(); sfx(crit?'crit':'hit'); if(crit)shake();
   $('dg-log').innerHTML=label+' <b>'+total+'</b> ('+hits+' golpes)'+(crit?' <span style="color:var(--red)">¡CRÍTICO!</span>':'');
   renderCombat();
@@ -1635,7 +1735,7 @@ function enemyDown(){
   if(wasBoss && !d.abyss) S.cleared[d.r.id]=true;   // el Abismo no marca regiones del mapa
   d.phase='reward';
   const xp=wasBoss?d.r.minLv*30+40:d.r.minLv*8+10;
-  const gold=wasBoss?150:12+Math.floor(Math.random()*16);
+  const gold=Math.round((wasBoss?150:12+Math.floor(Math.random()*16))*goldMult());
   S.gold+=gold; gainXP(xp); S.m.gold+=gold; if(wasBoss){S.m.boss++; LIFE.bosses=(LIFE.bosses||0)+1; saveLife();}
   if(wasBoss && !d.abyss){ showChoice(); return; }
   showReward(rollReward(wasBoss,xp,gold),wasBoss);
@@ -1677,7 +1777,7 @@ function statText(it){
 let pendingLv=0, afterLvCb=null;
 function levelUp(){
   S.level++; S.expMax=Math.round(S.expMax*1.35); S.points+=3;
-  S.stats.vitalidad+=1; S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
+  S.stats.vitalidad+=1; S.hpMax=computeHpMax(); S.hp=S.hpMax;
   S.energyMax+=6; pendingLv++;
 }
 function flushLevel(cb){
@@ -1769,7 +1869,7 @@ function equip(it){
   S.equipped[it.slot]=it;
   S.inventory=S.inventory.filter(x=>x!==it);
   if(prev) S.inventory.push(prev);
-  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);
+  S.hpMax=computeHpMax(); S.hp=Math.min(S.hp,S.hpMax);
   showToast(it.ico,it.rar.toUpperCase(),'Equipado: '+it.name,statText(it));
   if(S.screen==='mochila')renderInv();
   if(S.screen==='personaje')renderHero();
@@ -1816,7 +1916,7 @@ function openSlot(slotId){
   $('slot-ov-inner').innerHTML=h; $('slot-ov').classList.add('show');
 }
 function pickSlot(gi){ const it=S.inventory[gi]; if(!it)return; equip(it); closeSlotPicker(); renderHero(); }
-function unequipSlot(){ const id=S._slot, cur=S.equipped[id]; if(cur){ S.equipped[id]=null; S.inventory.push(cur); S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax); } closeSlotPicker(); renderHero(); }
+function unequipSlot(){ const id=S._slot, cur=S.equipped[id]; if(cur){ S.equipped[id]=null; S.inventory.push(cur); S.hpMax=computeHpMax(); S.hp=Math.min(S.hp,S.hpMax); } closeSlotPicker(); renderHero(); }
 function closeSlotPicker(){ $('slot-ov').classList.remove('show'); }
 function openSkins(){
   let h='<div class="sys mono" style="color:var(--gold);letter-spacing:2px">✨ ASPECTO ✨</div>';
@@ -1838,7 +1938,7 @@ function togglePet(){ S.petOn=!S.petOn; renderHero(); openSkins(); }
 
 /* ---------- stats ---------- */
 function renderStats(){
-  $('pts').textContent=S.points; $('st-lv').textContent=S.level;
+  $('pts').textContent=S.points; $('st-lv').textContent=S.level; { const hp=$('hero-power'); if(hp)hp.textContent=fmt(powerScore()); }
   $('st-fue').textContent=totalStat('fuerza'); $('st-agi').textContent=totalStat('agilidad');
   $('st-vit').textContent=totalStat('vitalidad'); $('st-res').textContent=totalStat('resistencia');
   $('st-sue').textContent=totalStat('suerte');
@@ -1846,7 +1946,7 @@ function renderStats(){
 }
 document.querySelectorAll('.plusbtn').forEach(b=>b.onclick=()=>{
   if(S.points<=0)return; S.stats[b.dataset.s]++; S.points--;
-  if(b.dataset.s==='vitalidad'){S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);}
+  if(b.dataset.s==='vitalidad'){S.hpMax=computeHpMax(); S.hp=Math.min(S.hp,S.hpMax);}
   renderStats();
 });
 
@@ -1911,7 +2011,7 @@ function upgradeItem(it){
   if(S.gold<cost){ showToast('🪙','ORO','Te falta oro','Necesitas '+cost+' 🪙 · consíguelo caminando y en combate'); return; }
   S.gold-=cost; it.plus=(it.plus||0)+1;
   ['fuerza','agilidad','resistencia','vitalidad','suerte'].forEach(k=>{ if(it[k]) it[k]+=1; });
-  S.hpMax=100+totalStat('vitalidad')*8; S.hp=Math.min(S.hp,S.hpMax);
+  S.hpMax=computeHpMax(); S.hp=Math.min(S.hp,S.hpMax);
   showToast(it.ico,'FORJA','¡'+it.name+' mejorado a +'+it.plus+'!','+1 a sus estadísticas');
   renderShop(); if(S.screen==='personaje')renderHero();
 }
