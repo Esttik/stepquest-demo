@@ -487,7 +487,7 @@ canvas.cv-pixel{image-rendering:pixelated}
           <div class="row"><span class="h" style="margin:0">🎯 Retos</span><span class="mono" style="font-size:11px;color:var(--gold)"><span id="retos-sum"></span> ▸</span></div>
         </div>
         <div id="home-nudge" style="text-align:center;font-size:12.5px;color:var(--gold);margin:2px 0 8px;font-weight:600"></div>
-        <button class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
+        <button id="home-cta" class="btn violet" style="width:100%" onclick="go('mapa')">🗺️ ABRIR MAPA / EXPEDICIÓN</button>
       </div>
 
       <!-- MAPA -->
@@ -708,7 +708,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v16 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v17 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -844,6 +844,9 @@ function renderHome(){
   const fr=frontierRegion(); $('home-expname').textContent=fr?fr.name:'Todo despejado ✓';
   const ng=$('home-nudge'); if(ng)ng.textContent=nextGoal();
   const rs=$('retos-sum'); if(rs){ const am=MISSIONS.filter(m=>!S.mClaimed[m.id]).length; const rl=ACHIEVS.filter(a=>!S.aClaimed[a.id]&&a.get()>=a.target).length; rs.textContent=am+' misiones'+(rl?' · '+rl+' logro'+(rl>1?'s':'')+' ✓':''); }
+  const cta=$('home-cta');
+  if(cta){ if(S.dg){ cta.innerHTML='▶ CONTINUAR EXPEDICIÓN'; cta.setAttribute('onclick','resumeDungeon()'); cta.classList.remove('violet'); cta.classList.add('gold'); }
+    else { cta.innerHTML='🗺️ ABRIR MAPA / EXPEDICIÓN'; cta.setAttribute('onclick',"go('mapa')"); cta.classList.remove('gold'); cta.classList.add('violet'); } }
 }
 function frontierRegion(){ return REGIONS.find(r=>(r.id===0||S.cleared[r.id-1]) && !S.cleared[r.id]); }
 /* ---------- Misiones ---------- */
@@ -1095,15 +1098,18 @@ function simSteps(n){
   S.steps+=n;
   const xp=Math.round(n/22); gainXP(xp); $('home-gainxp').textContent='+'+xp;
   checkDailyGoal();
-  if(S.dg && S.screen==='dungeon'){ S.dg.strideBuf=(S.dg.strideBuf||0)+n; runExpedition(); }
-  else { S.savedSteps=(S.savedSteps||0)+n; }
+  if(S.dg){ // hay expedición activa: los pasos SIEMPRE alimentan el avance, estés o no en la pantalla
+    S.dg.strideBuf=(S.dg.strideBuf||0)+n;
+    if(S.screen==='dungeon') runExpedition();   // si estás mirando, avanza en vivo; si no, se procesa al volver
+  } else { S.savedSteps=(S.savedSteps||0)+n; }
   refreshUI(); flushLevel();
 }
-function simAway(n){   // pasos con la app cerrada -> se guardan para la expedición
+function simAway(n){   // pasos con la app cerrada
   S.steps+=n; gainXP(Math.round(n/22)); checkDailyGoal();
-  S.savedSteps=(S.savedSteps||0)+n;
+  if(S.dg){ S.dg.strideBuf=(S.dg.strideBuf||0)+n; }   // van a la expedición activa
+  else { S.savedSteps=(S.savedSteps||0)+n; }
   refreshUI(); flushLevel();
-  showToast('🌙','RARA','Caminaste '+fmt(n)+' pasos','Guardados para tu expedición');
+  showToast('🌙','RARA','Caminaste '+fmt(n)+' pasos',S.dg?'Aplicados a tu expedición activa':'Guardados para tu expedición');
 }
 
 /* ---------- map ---------- */
@@ -1123,13 +1129,15 @@ function renderMap(){
     const cleared = !!S.cleared[r.id];
     const cur = frontier && r.id===frontier.id;
     const prev = REGIONS[r.id-1];
+    const active = S.dg && !S.dg.abyss && S.dg.r && S.dg.r.id===r.id;   // expedición en curso en esta zona
     let sub;
-    if(cleared) sub='✓ Completada · '+r.boss+' derrotado';
+    if(active) sub='▶ Continuar · sala '+Math.min(S.dg.idx+1,S.dg.total)+'/'+S.dg.total;
+    else if(cleared) sub='✓ Completada · '+r.boss+' derrotado';
     else if(unlocked) sub='Jefe: '+r.boss+' · '+r.rooms+' salas';
     else sub='🔒 Derrota al jefe de <b>'+(prev?prev.name:'la zona anterior')+'</b>';
     const d=document.createElement('div');
-    d.className='region'+(unlocked?'':' locked')+(cur?' cur':'')+(cleared?' done':'');
-    d.innerHTML=(cur?'<div class="badge-here">◉ AQUÍ</div>':'')+(cleared?'<div class="badge-done">✓ HECHO</div>':'')+
+    d.className='region'+(unlocked?'':' locked')+(cur?' cur':'')+(cleared?' done':'')+(active?' active':'');
+    d.innerHTML=(active?'<div class="badge-here" style="background:var(--gold);color:#111">▶ EN CURSO</div>':(cur?'<div class="badge-here">◉ AQUÍ</div>':''))+(cleared?'<div class="badge-done">✓ HECHO</div>':'')+
       '<div class="ico" style="border-color:'+r.color+';color:'+r.color+';background:'+r.color+'22">'+r.ico+'</div>'+
       '<div class="info"><div class="n">'+r.name+'</div><div class="s">'+sub+'</div></div>'+
       '<div class="rk" style="color:'+r.color+'">'+r.rk+'</div>';
@@ -1140,8 +1148,26 @@ function renderMap(){
 
 /* ---------- mazmorra: EXPEDICIÓN AUTOMÁTICA (avanza con los pasos) + jefe manual ---------- */
 const EXP_MOBS=[['Murciélago','🦇'],['Slime','🟢'],['Esqueleto','💀'],['Araña','🕷️'],['Gnoll','👹'],['Rata gigante','🐀'],['Golem menor','🪨']];
-function leaveDungeon(){ const d=S.dg; if(d&&d.timer)clearTimeout(d.timer); if(d&&d.dodgeRAF)cancelAnimationFrame(d.dodgeRAF); if(d&&d.dodgeTO)clearTimeout(d.dodgeTO); if(d){ S.savedSteps=(S.savedSteps||0)+Math.round(d.strideBuf||0); } S.dg=null; go('mapa'); }
+function pauseDungeon(){ const d=S.dg; if(!d)return; // congela animaciones y timers pero CONSERVA el progreso
+  if(d.timer){clearTimeout(d.timer);d.timer=null;} d.running=false;
+  if(d.dodgeRAF){cancelAnimationFrame(d.dodgeRAF);d.dodgeRAF=0;} if(d.dodgeTO){clearTimeout(d.dodgeTO);d.dodgeTO=null;}
+  d.dodge=false; d.telegraph=false; const es=$('en-sprite'); if(es)es.classList.remove('charging');
+  const ws=$('walk-scene'); if(ws)ws.classList.remove('walking');
+}
+function leaveDungeon(){ pauseDungeon(); go('mapa'); }   // salir NO reinicia: la expedición queda guardada
+function resumeDungeon(){   // volver a la expedición en curso, justo donde estaba
+  const d=S.dg; if(!d){ go('mapa'); return; }
+  const r=d.r;
+  $('dg-title').textContent=d.abyss?('Abismo · Piso '+d.floor):r.name;
+  $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color);
+  $('walk-scene').classList.toggle('rage', (d.rageActive||0)>0);
+  go('dungeon'); updateExpUI(); updateRageUI();
+  if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} showCombat(); renderCombat(); }
+  else { $('dg-arena').classList.remove('boss'); showWalk(); runExpedition(); }   // procesa los pasos acumulados mientras no mirabas
+}
 function enterDungeon(r){
+  if(S.dg){ if(!S.dg.abyss && S.dg.r && S.dg.r.id===r.id){ resumeDungeon(); return; }   // misma zona en curso -> continuar
+    pauseDungeon(); S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); }      // abandonas otra expedición -> devuelve su energía
   S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
   S.dg={r,idx:0,total:r.rooms,phase:'auto',enemy:null,items:{0:3,1:1},cd:{},menu:'main',timer:null,strideBuf:0,running:false,rage:0,rageActive:0};
   $('dg-title').textContent=r.name;
@@ -1166,6 +1192,8 @@ function abyssRegion(floor){
     rooms:3, color:ABYSS_COLORS[floor%ABYSS_COLORS.length], boss:'Guardián del Abismo', bemo:'👹'};
 }
 function enterAbyss(){
+  if(S.dg){ if(S.dg.abyss){ resumeDungeon(); return; }   // ya estás en el Abismo -> continuar
+    pauseDungeon(); S.savedSteps=(S.savedSteps||0)+Math.round(S.dg.strideBuf||0); }
   const floor=1;
   S.hpMax=100+totalStat('vitalidad')*8; S.hp=S.hpMax;
   const r=abyssRegion(floor);
@@ -1299,7 +1327,7 @@ function unleashRage(){
 function startBoss(){
   const d=S.dg, lv=Math.max(d.r.minLv,S.level);
   const hp=lv*38+d.r.minLv*24+140;
-  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*4+11,boss:true};
+  d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*4+11,lv:lv,boss:true};
   d.turns=0; d.telegraph=false; d.dodge=false;
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
@@ -1417,12 +1445,14 @@ function startDodge(){
   const d=S.dg,e=d.enemy; if(!d||!e)return;
   d.dodge=true; d.telegraph=true;
   const agi=totalStat('agilidad');
-  const diff=d.abyss?(d.floor||1):(d.r.minLv||1);   // dificultad escalonada por jefe/piso
-  d.zoneHalf=Math.min(24, 8+agi*0.30);              // zona más pequeña; la agilidad ayuda pero con tope bajo
+  const lv=e.lv||(d.abyss?(d.floor||1):(d.r.minLv||1));   // nivel real del enemigo
+  // ZONA VERDE progresiva: la AGILIDAD la ensancha (más fácil), el NIVEL del enemigo la estrecha (más difícil)
+  d.zoneHalf=Math.max(5, Math.min(22, 7+agi*0.28-lv*0.55));
   const span=Math.max(8, 100-2*d.zoneHalf-12);      // mantener la zona dentro de la barra
   d.zoneC=d.zoneHalf+6+Math.random()*span;
   d.dodgeDir=1; d.dodgePos=Math.random()*100;
-  const spd=1.4*Math.max(0.55, 1.1-agi*0.011)*(1+Math.min(1.6, diff*0.06));  // base más rápida y sube fuerte con la dificultad
+  // VELOCIDAD progresiva: sube con el nivel del enemigo, baja (te ayuda) con tu agilidad
+  const spd=1.5*(1+Math.min(1.6, lv*0.06))*Math.max(0.65, 1-agi*0.006);
   $('en-sprite').classList.add('charging'); sfx('boss'); shake();
   $('dg-log').innerHTML='⚠️ <b style="color:#ff4d6d">¡'+e.name+' lanza su GOLPE DEFINITIVO! Toca ESQUIVAR en la zona verde.</b>';
   renderCmd();
