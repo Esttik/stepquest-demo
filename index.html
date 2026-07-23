@@ -723,7 +723,7 @@ canvas.cv-pixel{image-rendering:pixelated}
     <button class="dclose" onclick="toggleDemo()">▾ Cerrar</button>
   </div>
 
-  <div class="footer-note">Demo v21 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
+  <div class="footer-note">Demo v22 · Todo simulado en el navegador para probar el flujo. En la app real, los pasos vendrían de Apple Salud (iPhone) o Health Connect (Android), sin necesidad de reloj.</div>
 
 <script>
 const S = {
@@ -1230,7 +1230,7 @@ function resumeDungeon(){   // volver a la expedición en curso, justo donde est
   $('walk-scene').style.setProperty('--zone', r.color); $('dg-arena').style.setProperty('--zone', r.color); setSceneZone(r,d.abyss);
   $('walk-scene').classList.toggle('rage', (d.rageActive||0)>0);
   go('dungeon'); updateExpUI(); updateRageUI();
-  if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} d.menu='main'; showCombat(); renderCombat(); }
+  if(d.phase==='combat'){ $('dg-arena').classList.add('boss'); const en=$('en-sprite'); if(en&&d.enemy){en.textContent=d.enemy.emo;} d.menu='main'; d.turnLock=false; d.dodge=false; showCombat(); renderCombat(); }
   else { $('dg-arena').classList.remove('boss'); showWalk(); runExpedition(); }   // procesa los pasos acumulados mientras no mirabas
 }
 function enterDungeon(r){
@@ -1402,7 +1402,7 @@ function startBoss(){
   const d=S.dg, lv=Math.max(d.r.minLv,S.level);
   const hp=lv*38+d.r.minLv*24+140;
   d.enemy={name:d.r.boss,emo:d.r.bemo,hp:hp,hpMax:hp,atk:lv*4+11,lv:lv,boss:true};
-  d.turns=0; d.telegraph=false; d.dodge=false;
+  d.turns=0; d.telegraph=false; d.dodge=false; d.turnLock=false;
   $('dg-arena').classList.add('boss');
   d.phase='combat'; d.cd={}; d.menu='main';
   $('en-sprite').textContent=d.enemy.emo; $('en-sprite').classList.remove('charging');
@@ -1449,12 +1449,13 @@ function renderCmd(){
     if(!any) h+='<div class="mut" style="text-align:center;padding:8px">No te quedan objetos.</div>';
     h+='<button class="cmd-back" onclick="backMenu()">◀ Volver</button></div>';
   } else {
+    const lock=!!d.turnLock;
     h='<div class="actions4">'+
-      '<button class="btn" onclick="cmdAttack()">⚔️ Atacar</button>'+
-      '<button class="btn violet" onclick="openMenu(\'magia\')">🔮 Magia</button>'+
-      '<button class="btn gold" onclick="openMenu(\'objeto\')">🎒 Objeto</button>'+
-      '<button class="btn red" onclick="cmdFlee()">🏃 Huir</button>'+
-    '</div>';
+      '<button class="btn'+(lock?' dis':'')+'" '+(lock?'disabled':'onclick="cmdAttack()"')+'>⚔️ Atacar</button>'+
+      '<button class="btn violet'+(lock?' dis':'')+'" '+(lock?'disabled':'onclick="openMenu(\'magia\')"')+'>🔮 Magia</button>'+
+      '<button class="btn gold'+(lock?' dis':'')+'" '+(lock?'disabled':'onclick="openMenu(\'objeto\')"')+'>🎒 Objeto</button>'+
+      '<button class="btn red'+(lock?' dis':'')+'" '+(lock?'disabled':'onclick="cmdFlee()"')+'>🏃 Huir</button>'+
+    '</div>'+(lock?'<div class="mut" style="text-align:center;font-size:11px;margin-top:5px">⏳ Turno del enemigo…</div>':'');
   }
   $('cmd-area').innerHTML=h;
 }
@@ -1486,22 +1487,22 @@ function doDamageMulti(mult,hits,label){
   renderCombat();
   if(e.hp<=0){ cbtDelay(enemyDown,450); } else { cbtDelay(enemyStrike,560); }
 }
-function cmdAttack(){ if(!S.dg||S.dg.phase!=='combat')return; tickCds(); S.dg.menu='main';
+function cmdAttack(){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge)return; d.turnLock=true; tickCds(); d.menu='main';
   const w=(S.equipped.arma&&S.equipped.arma.name)?S.equipped.arma.name:'tus puños';
   doDamage(1,'⚔️ Atacas con '+w+' por'); }
-function useSkill(i){ const d=S.dg; if(!d||d.phase!=='combat'||(d.cd[i]||0)>0)return; const s=SKILLS[i];
-  tickCds(); d.menu='main';
+function useSkill(i){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge||(d.cd[i]||0)>0)return; const s=SKILLS[i];
+  d.turnLock=true; tickCds(); d.menu='main';
   if(s.hits) doDamageMulti(s.mult,s.hits,'✨ '+s.name+':'); else doDamage(s.mult,'✨ '+s.name+' —');
   d.cd[i]=s.cd; }
-function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||(d.items[i]||0)<=0)return; const it=ITEMS[i];
-  tickCds(); d.items[i]--; d.menu='main';
+function useItemI(i){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge||(d.items[i]||0)<=0)return; const it=ITEMS[i];
+  d.turnLock=true; tickCds(); d.items[i]--; d.menu='main';
   if(it.heal){ const heal=Math.round(S.hpMax*it.heal); S.hp=Math.min(S.hpMax,S.hp+heal);
     $('dg-log').innerHTML='🧪 Usas <b>'+it.name+'</b> · <b style="color:var(--green)">+'+heal+' vida</b>'; renderCombat(); cbtDelay(enemyStrike,560); }
   else if(it.dmg){ const e=d.enemy; e.hp-=it.dmg; floatDmg(it.dmg,false);
     $('dg-log').innerHTML='💣 Lanzas <b>'+it.name+'</b> · <b>'+it.dmg+'</b> de daño'; renderCombat();
     if(e.hp<=0)cbtDelay(enemyDown,450); else cbtDelay(enemyStrike,560); }
 }
-function cmdFlee(){ if(!S.dg||S.dg.phase!=='combat')return; S.dg.menu='main';
+function cmdFlee(){ const d=S.dg; if(!d||d.phase!=='combat'||d.turnLock||d.dodge)return; d.turnLock=true; d.menu='main';
   const chance=45+totalStat('agilidad');
   if(Math.random()*100<chance){ S.dg.phase='auto'; $('dg-arena').classList.remove('boss'); $('dg-log').innerHTML='🏃 Te repliegas del jefe.';
     cbtDelay(()=>{ showWalk(); $('walk-log').innerHTML='Te repliegas. Camina para volver a enfrentarte al jefe.'; updateExpUI(); },650); }
@@ -1515,7 +1516,8 @@ function enemyStrike(){
   const es=$('en-sprite'); if(es){ es.classList.add('atk'); setTimeout(()=>es.classList.remove('atk'),420); }   // el enemigo se lanza al golpear
   S.hp-=dmg; renderCombat(); sfx('hurt'); shake();
   if(S.hp<=0){playerDown();return;}
-  if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ startDodge(); } }
+  if(e.boss){ d.turns=(d.turns||0)+1; if(d.turns%3===0){ startDodge(); return; } }   // toca esquivar: sigue bloqueado hasta resolver
+  d.turnLock=false; renderCmd();   // fin del turno enemigo -> vuelve a ti
 }
 function startDodge(){
   const d=S.dg,e=d.enemy; if(!d||!e)return;
@@ -1565,7 +1567,7 @@ function resolveDodge(ok){
     $('dg-log').innerHTML='💥 <b style="color:var(--red)">'+e.name+' te acierta de lleno</b> · −'+dmg+'❤'; }
   renderCombat();
   if(S.hp<=0){ playerDown(); return; }
-  renderCmd();
+  d.turnLock=false; renderCmd();   // esquiva resuelta -> vuelve tu turno
 }
 function playerDown(){
   const d=S.dg; if(!d)return;
